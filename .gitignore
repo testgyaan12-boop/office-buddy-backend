@@ -1,0 +1,27 @@
+# Spring Boot
+target/
+build/
+*.class
+*.jar
+*.war
+*.log
+*.iml
+.idea/
+.vscode/
+*.springBeans
+
+# Environment
+.env
+application-local.yml
+
+# Uploads
+uploads/
+
+# IDE
+.project
+.classpath
+.settings/
+.factorypath
+
+# Logs
+*.err
