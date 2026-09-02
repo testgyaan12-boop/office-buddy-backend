@@ -1,5 +1,7 @@
 package com.officebuddy.company.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,4 +22,13 @@ public class CompanyResponse {
     private boolean isCurrent;
     private int documentCount;
     private String createdAt;
+
+    @JsonProperty("isCurrent")
+    public boolean isCurrent() { return isCurrent; }
+
+    @JsonProperty("isCurrent")
+    public void setCurrent(boolean isCurrent) { this.isCurrent = isCurrent; }
+
+    @JsonProperty("isCurrent")
+    public void setIsCurrent(boolean isCurrent) { this.isCurrent = isCurrent; }
 }
