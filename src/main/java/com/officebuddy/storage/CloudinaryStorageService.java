@@ -91,4 +91,16 @@ public class CloudinaryStorageService implements StorageService {
     public String getPresignedUrl(String key) {
         return cloudinary.url().secure(true).generate(key);
     }
+
+    @Override
+    public byte[] downloadBytes(String key) {
+        try {
+            String url = cloudinary.url().secure(true).generate(key);
+            try (var in = new java.net.URL(url).openStream()) {
+                return in.readAllBytes();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to download from Cloudinary: " + key, e);
+        }
+    }
 }

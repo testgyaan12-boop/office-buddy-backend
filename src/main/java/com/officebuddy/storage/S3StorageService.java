@@ -15,6 +15,10 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.UUID;
 
+import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+
 @Service
 @ConditionalOnProperty(name = "app.storage.type", havingValue = "s3")
 public class S3StorageService implements StorageService {
@@ -100,5 +104,16 @@ public class S3StorageService implements StorageService {
 
         URL presignedUrl = s3Presigner.presignGetObject(presignRequest).url();
         return presignedUrl.toString();
+    }
+
+    @Override
+    public byte[] downloadBytes(String key) {
+        try {
+            GetObjectRequest getRequest = GetObjectRequest.builder().bucket(bucketName).key(key).build();
+            ResponseBytes<GetObjectResponse> resp = s3Client.getObjectAsBytes(getRequest);
+            return resp.asByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to download from S3: " + key, e);
+        }
     }
 }

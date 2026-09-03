@@ -10,12 +10,12 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "job_switch_packs")
+@Table(name = "job_switch_pack_download_details")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JobSwitchPack {
+public class JobSwitchPackDownloadDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -24,15 +24,11 @@ public class JobSwitchPack {
     @Column(nullable = false)
     private UUID userId;
 
-    private String status;
+    @Column(nullable = false)
+    private UUID packId;
 
-    private String bundleKey;
-
-    private String selectedTypes; // JSON e.g. {"OFFER_LETTER":2,"PAYSLIP":3}
-
+    @Column(nullable = false)
     private Integer downloadCount;
-
-    private Boolean isPaid;
 
     private Boolean active;
 
@@ -42,20 +38,23 @@ public class JobSwitchPack {
 
     private LocalDateTime updatedAt;
 
-    private LocalDateTime generatedAt;
+    private LocalDateTime downloadedAt;
 
-    private LocalDateTime expiresAt;
+    private String ipAddress;
+
+    private String userAgent;
+
+    @Column(columnDefinition = "TEXT")
+    private String selectedTypesSnapshot;
 
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
-        generatedAt = now;
-        expiresAt = now.plusDays(7);
         createdAt = now;
         updatedAt = now;
+        downloadedAt = now;
         if (active == null) active = true;
-        if (downloadCount == null) downloadCount = 0;
-        if (isPaid == null) isPaid = false;
+        if (downloadCount == null) downloadCount = 1;
     }
 
     @PreUpdate

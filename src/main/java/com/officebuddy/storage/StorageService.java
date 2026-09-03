@@ -7,4 +7,5 @@ public interface StorageService {
     StorageResult uploadBytes(String fileName, byte[] data, String contentType);
     void deleteFile(String key);
     String getPresignedUrl(String key);
+    byte[] downloadBytes(String key);
 }

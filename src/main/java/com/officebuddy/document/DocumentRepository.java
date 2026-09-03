@@ -25,8 +25,9 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
     long countByUserIdAndType(UUID userId);
 
     @Query("SELECT d FROM Document d WHERE d.userId = :userId AND d.deletedAt IS NULL AND " +
-           "(:query IS NULL OR LOWER(d.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-           "LOWER(d.fileName) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
-           "(:type IS NULL OR d.type = :type)")
+           "(:query IS NULL OR :query = '' OR LOWER(d.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(d.fileName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "EXISTS (SELECT c FROM com.officebuddy.company.Company c WHERE c.id = d.companyId AND c.deletedAt IS NULL AND LOWER(c.name) LIKE LOWER(CONCAT('%', :query, '%')))) AND " +
+           "(:type IS NULL OR d.type = :type) ORDER BY d.uploadedAt DESC")
     List<Document> search(UUID userId, String query, DocumentType type);
 }

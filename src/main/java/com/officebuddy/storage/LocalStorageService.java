@@ -80,4 +80,14 @@ public class LocalStorageService implements StorageService {
     public String getPresignedUrl(String key) {
         return "/api/v1/storage/" + key;
     }
+
+    @Override
+    public byte[] downloadBytes(String key) {
+        try {
+            Path filePath = uploadPath.resolve(key);
+            return Files.readAllBytes(filePath);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to download file: " + key, e);
+        }
+    }
 }
