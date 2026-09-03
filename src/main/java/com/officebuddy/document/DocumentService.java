@@ -37,6 +37,9 @@ public class DocumentService {
     public DocumentResponse getDocument(UUID userId, UUID documentId) {
         var document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new RuntimeException("Document not found"));
+        if (document.getDeletedAt() != null) {
+            throw new RuntimeException("Document not found");
+        }
         if (!document.getUserId().equals(userId)) {
             throw new RuntimeException("Access denied");
         }
@@ -113,6 +116,9 @@ public class DocumentService {
     public String getPresignedUrl(UUID userId, UUID documentId) {
         var document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new RuntimeException("Document not found"));
+        if (document.getDeletedAt() != null) {
+            throw new RuntimeException("Document not found");
+        }
         if (!document.getUserId().equals(userId)) {
             throw new RuntimeException("Access denied");
         }
@@ -125,8 +131,12 @@ public class DocumentService {
         if (!document.getUserId().equals(userId)) {
             throw new RuntimeException("Access denied");
         }
-        storageService.deleteFile(document.getFileKey());
-        documentRepository.delete(document);
+        if (document.getDeletedAt() != null) {
+            throw new RuntimeException("Document already deleted");
+        }
+        // Soft delete only — keep file in storage (delete=false)
+        document.setDeletedAt(java.time.LocalDateTime.now());
+        documentRepository.save(document);
     }
 
     public List<DocumentResponse> search(UUID userId, String query, DocumentType type) {

@@ -59,6 +59,8 @@ public class Document {
 
     private LocalDateTime updatedAt;
 
+    private LocalDateTime deletedAt;
+
     @PrePersist
     protected void onCreate() {
         uploadedAt = LocalDateTime.now();
