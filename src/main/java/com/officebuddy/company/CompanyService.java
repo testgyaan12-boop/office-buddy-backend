@@ -3,6 +3,7 @@ package com.officebuddy.company;
 import com.officebuddy.company.dto.CompanyRequest;
 import com.officebuddy.company.dto.CompanyResponse;
 import com.officebuddy.document.DocumentRepository;
+import com.officebuddy.timeline.TimelineRepository;
 import com.officebuddy.timeline.TimelineService;
 import com.officebuddy.timeline.dto.TimelineEventRequest;
 import com.officebuddy.user.User;
@@ -20,6 +21,7 @@ public class CompanyService {
 
     private final CompanyRepository companyRepository;
     private final DocumentRepository documentRepository;
+    private final TimelineRepository timelineRepository;
     private final TimelineService timelineService;
 
     public List<CompanyResponse> getCompanies(UUID userId) {
@@ -32,6 +34,9 @@ public class CompanyService {
     public CompanyResponse getCompany(UUID userId, UUID companyId) {
         var company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("Company not found"));
+        if (company.getDeletedAt() != null) {
+            throw new RuntimeException("Company not found");
+        }
         if (!company.getUserId().equals(userId)) {
             throw new RuntimeException("Access denied");
         }
@@ -87,8 +92,30 @@ public class CompanyService {
         if (!company.getUserId().equals(userId)) {
             throw new RuntimeException("Access denied");
         }
-        company.setDeletedAt(LocalDateTime.now());
+        if (company.getDeletedAt() != null) {
+            throw new RuntimeException("Company already deleted");
+        }
+        var now = LocalDateTime.now();
+        company.setDeletedAt(now);
         companyRepository.save(company);
+
+        // Soft delete career timeline events for this company
+        var events = timelineRepository.findByCompanyIdAndUserIdOrderByEventDateDesc(companyId, userId);
+        for (var e : events) {
+            if (e.getDeletedAt() == null) {
+                e.setDeletedAt(now);
+            }
+        }
+        if (!events.isEmpty()) timelineRepository.saveAll(events);
+
+        // Soft delete documents for this company (keep files, hide from list)
+        var docs = documentRepository.findByCompanyIdAndUserIdOrderByUploadedAtDesc(companyId, userId);
+        for (var d : docs) {
+            if (d.getDeletedAt() == null) {
+                d.setDeletedAt(now);
+            }
+        }
+        if (!docs.isEmpty()) documentRepository.saveAll(docs);
     }
 
     public long getCompanyCount(UUID userId) {

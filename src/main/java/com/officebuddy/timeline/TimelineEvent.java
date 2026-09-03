@@ -45,6 +45,8 @@ public class TimelineEvent {
 
     private LocalDateTime updatedAt;
 
+    private LocalDateTime deletedAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
