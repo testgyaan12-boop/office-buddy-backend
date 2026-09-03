@@ -18,14 +18,7 @@ public class CommunityCompanyDto {
     private String role;
     private LocalDate startDate;
     private LocalDate endDate;
-    private boolean isCurrent;
-
     @JsonProperty("isCurrent")
-    public boolean isCurrent() { return isCurrent; }
-
-    @JsonProperty("isCurrent")
-    public void setCurrent(boolean isCurrent) { this.isCurrent = isCurrent; }
-
-    @JsonProperty("isCurrent")
-    public void setIsCurrent(boolean isCurrent) { this.isCurrent = isCurrent; }
+    @JsonAlias({"current", "is_current"})
+    private Boolean isCurrent;
 }

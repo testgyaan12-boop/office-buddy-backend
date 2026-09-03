@@ -19,16 +19,9 @@ public class CompanyResponse {
     private String role;
     private LocalDate startDate;
     private LocalDate endDate;
-    private boolean isCurrent;
+    @JsonProperty("isCurrent")
+    @JsonAlias({"current", "is_current"})
+    private Boolean isCurrent;
     private int documentCount;
     private String createdAt;
-
-    @JsonProperty("isCurrent")
-    public boolean isCurrent() { return isCurrent; }
-
-    @JsonProperty("isCurrent")
-    public void setCurrent(boolean isCurrent) { this.isCurrent = isCurrent; }
-
-    @JsonProperty("isCurrent")
-    public void setIsCurrent(boolean isCurrent) { this.isCurrent = isCurrent; }
 }

@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -37,6 +38,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .badRequest()
                 .body(Map.of("message", firstMsg, "errors", errors.toString(), "error", firstMsg));
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<Map<String, String>> handleMediaTypeNotSupported(HttpMediaTypeNotSupportedException e) {
+        log.error("Media type not supported", e);
+        var msg = "Content-Type '" + e.getContentType() + "' is not supported. Use 'application/json'";
+        return ResponseEntity.badRequest().body(Map.of("message", msg, "error", msg));
     }
 
     @ExceptionHandler(Exception.class)

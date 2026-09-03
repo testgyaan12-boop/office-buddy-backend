@@ -22,16 +22,7 @@ public class CompanyRequest {
     private LocalDate startDate;
     @JsonDeserialize(using = FlexibleLocalDateDeserializer.class)
     private LocalDate endDate;
-    private boolean isCurrent;
-
-    @JsonProperty("isCurrent")
-    public boolean isCurrent() { return isCurrent; }
-
     @JsonProperty("isCurrent")
     @JsonAlias({"current", "is_current"})
-    public void setCurrent(boolean isCurrent) { this.isCurrent = isCurrent; }
-
-    // Jackson fallback for "isCurrent" setter name
-    @JsonProperty("isCurrent")
-    public void setIsCurrent(boolean isCurrent) { this.isCurrent = isCurrent; }
+    private Boolean isCurrent;
 }

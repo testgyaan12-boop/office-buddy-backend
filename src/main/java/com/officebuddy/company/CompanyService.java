@@ -39,13 +39,14 @@ public class CompanyService {
     }
 
     public CompanyResponse createCompany(UUID userId, CompanyRequest request) {
+        boolean current = Boolean.TRUE.equals(request.getIsCurrent());
         var company = Company.builder()
                 .userId(userId)
                 .name(request.getName())
                 .role(request.getRole())
                 .startDate(request.getStartDate())
-                .endDate(request.isCurrent() ? null : request.getEndDate())
-                .isCurrent(request.isCurrent())
+                .endDate(current ? null : request.getEndDate())
+                .isCurrent(current)
                 .build();
 
         companyRepository.save(company);
@@ -69,11 +70,12 @@ public class CompanyService {
             throw new RuntimeException("Access denied");
         }
 
+        boolean current = Boolean.TRUE.equals(request.getIsCurrent());
         company.setName(request.getName());
         company.setRole(request.getRole());
         company.setStartDate(request.getStartDate());
-        company.setEndDate(request.isCurrent() ? null : request.getEndDate());
-        company.setCurrent(request.isCurrent());
+        company.setEndDate(current ? null : request.getEndDate());
+        company.setCurrent(current);
 
         companyRepository.save(company);
         return toResponse(company);

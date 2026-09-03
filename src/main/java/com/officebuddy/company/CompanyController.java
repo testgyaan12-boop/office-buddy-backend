@@ -4,6 +4,7 @@ import com.officebuddy.company.dto.CompanyRequest;
 import com.officebuddy.company.dto.CompanyResponse;
 import com.officebuddy.user.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -33,7 +34,7 @@ public class CompanyController {
         return ResponseEntity.ok(companyService.getCompany(user.getId(), id));
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CompanyResponse> createCompany(
             Authentication authentication,
             @RequestBody CompanyRequest request
@@ -42,7 +43,7 @@ public class CompanyController {
         return ResponseEntity.ok(companyService.createCompany(user.getId(), request));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CompanyResponse> updateCompany(
             Authentication authentication,
             @PathVariable UUID id,
