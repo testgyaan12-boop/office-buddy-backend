@@ -40,6 +40,10 @@ public class TimelineEvent {
     @Column(nullable = false)
     private LocalDate eventDate;
 
+    private LocalDate documentDate;
+
+    private LocalDateTime uploadedAt;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 

@@ -42,6 +42,8 @@ public class TimelineService {
                 .eventType(request.getEventType())
                 .companyName(request.getCompanyName())
                 .eventDate(request.getEventDate())
+                .documentDate(request.getDocumentDate())
+                .uploadedAt(request.getUploadedAt())
                 .build();
 
         timelineRepository.save(event);
@@ -65,7 +67,9 @@ public class TimelineService {
                 .description(event.getDescription())
                 .eventType(event.getEventType())
                 .companyName(event.getCompanyName())
-                .eventDate(event.getEventDate().toString())
+                .eventDate(event.getEventDate() != null ? event.getEventDate().toString() : null)
+                .documentDate(event.getDocumentDate() != null ? event.getDocumentDate().toString() : null)
+                .uploadedAt(event.getUploadedAt() != null ? event.getUploadedAt().toString() : event.getCreatedAt() != null ? event.getCreatedAt().toString() : null)
                 .build();
     }
 }

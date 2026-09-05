@@ -60,6 +60,8 @@ CREATE TABLE timeline_events (
     event_type VARCHAR(50) NOT NULL,
     company_name VARCHAR(255),
     event_date DATE NOT NULL,
+    document_date DATE,
+    uploaded_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -209,3 +211,8 @@ INSERT INTO lookups (lookupid, lookup_code, short_name, long_name, parent_lookup
 (8, 'TDS_CERTIFICATE', 'TDS Certificate', 'TDS Certificate', 1, 7, TRUE, FALSE, '{"icon":"receipt","color":"#FF7C4DFF","eventType":"CERTIFICATE","title":"TDS Certificate from "}'),
 (9, 'CONFIRMATION_LETTER', 'Confirmation Letter', 'Confirmation Letter', 1, 8, TRUE, FALSE, '{"icon":"task_alt","color":"#FF26A69A","eventType":"CONFIRMED","title":"Confirmation at "}');
 SELECT setval('lookups_lookupid_seq', (SELECT MAX(lookupid) FROM lookups));
+
+-- Timeline dual date (ReceivedAt / UploadAt parity with documents)
+ALTER TABLE timeline_events ADD COLUMN IF NOT EXISTS document_date DATE;
+ALTER TABLE timeline_events ADD COLUMN IF NOT EXISTS uploaded_at TIMESTAMP;
+ALTER TABLE timeline_events ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;

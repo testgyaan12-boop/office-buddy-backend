@@ -63,6 +63,8 @@ public class CompanyService {
         eventRequest.setEventType("COMPANY_JOINED");
         eventRequest.setCompanyName(request.getName());
         eventRequest.setEventDate(request.getStartDate());
+        eventRequest.setDocumentDate(null);
+        eventRequest.setUploadedAt(LocalDateTime.now());
         timelineService.addEvent(userId, eventRequest);
 
         return toResponse(company);

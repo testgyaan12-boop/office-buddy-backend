@@ -86,6 +86,8 @@ public class DocumentService {
         eventRequest.setCompanyId(document.getCompanyId());
         eventRequest.setCompanyName(companyName);
         eventRequest.setEventDate(document.getDocumentDate() != null ? document.getDocumentDate() : document.getUploadedAt().toLocalDate());
+        eventRequest.setDocumentDate(document.getDocumentDate());
+        eventRequest.setUploadedAt(document.getUploadedAt());
 
         // Dynamic lookup: fetch eventType/title from lookups table remarks JSON, fallback to hard-coded
         String eventType = "DOCUMENT_UPLOADED";
