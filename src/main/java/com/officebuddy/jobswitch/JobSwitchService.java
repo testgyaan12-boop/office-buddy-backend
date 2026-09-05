@@ -47,19 +47,19 @@ public class JobSwitchService {
 
         if (!custom) {
             experienceDocs = documents.stream()
-                    .filter(d -> "CERTIFICATE".equals(d.getType()) || "RELIEVING_LETTER".equals(d.getType()))
+                    .filter(d -> "CERTIFICATE".equals(d.getType()) || "RELIEVING_LETTER".equals(d.getType()) || "TDS_CERTIFICATE".equals(d.getType()))
                     .toList();
             payslips = documents.stream().filter(d -> "PAYSLIP".equals(d.getType())).limit(3).toList();
             joiningDocs = documents.stream().filter(d -> "JOINING_LETTER".equals(d.getType())).toList();
             incrementDocs = documents.stream().filter(d -> "INCREMENT_LETTER".equals(d.getType())).toList();
-            offerDocs = documents.stream().filter(d -> "OFFER_LETTER".equals(d.getType())).toList();
+            offerDocs = documents.stream().filter(d -> "OFFER_LETTER".equals(d.getType()) || "CONFIRMATION_LETTER".equals(d.getType())).toList();
         } else {
             var map = req.getIncludeCounts();
-            experienceDocs = getLimited(documents, Set.of("CERTIFICATE", "RELIEVING_LETTER"), map);
+            experienceDocs = getLimited(documents, Set.of("CERTIFICATE", "RELIEVING_LETTER", "TDS_CERTIFICATE"), map);
             payslips = getLimited(documents, Set.of("PAYSLIP"), map);
             joiningDocs = getLimited(documents, Set.of("JOINING_LETTER"), map);
             incrementDocs = getLimited(documents, Set.of("INCREMENT_LETTER"), map);
-            offerDocs = getLimited(documents, Set.of("OFFER_LETTER"), map);
+            offerDocs = getLimited(documents, Set.of("OFFER_LETTER", "CONFIRMATION_LETTER"), map);
         }
 
         String selectedJson = null;

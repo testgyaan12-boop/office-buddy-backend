@@ -52,10 +52,14 @@ public class DocumentController {
             throw new RuntimeException("Invalid document type: " + type);
         }
         var user = (User) authentication.getPrincipal();
+        var parsedDate = documentDate != null && !documentDate.isBlank()
+                ? java.time.LocalDate.parse(documentDate.substring(0, 10))
+                : null;
         var request = DocumentRequest.builder()
                 .fileName(file.getOriginalFilename())
                 .type(type)
                 .companyId(companyId)
+                .documentDate(parsedDate)
                 .tags(tags)
                 .build();
         return ResponseEntity.ok(documentService.uploadDocument(user.getId(), file, request));

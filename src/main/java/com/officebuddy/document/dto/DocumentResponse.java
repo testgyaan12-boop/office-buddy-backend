@@ -23,5 +23,6 @@ public class DocumentResponse {
     private long fileSize;
     private String mimeType;
     private List<String> tags;
+    private String documentDate;
     private String uploadedAt;
 }

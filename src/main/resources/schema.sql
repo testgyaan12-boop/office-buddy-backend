@@ -200,10 +200,12 @@ CREATE INDEX idx_lookups_parent ON lookups(parent_lookup_id) WHERE is_active = T
 
 INSERT INTO lookups (lookupid, lookup_code, short_name, long_name, parent_lookup_id, sorted_order, is_active, is_deleted, remarks) VALUES
 (1, 'DOC_TYPE', 'Document Type', 'Document Type', NULL, 1, TRUE, FALSE, '{"icon":"description","color":"#FF6C63FF"}'),
-(2, 'OFFER_LETTER', 'Offer Letter', 'Offer Letter', 1, 1, TRUE, FALSE, '{"icon":"card_membership","color":"#FF00B894"}'),
-(3, 'JOINING_LETTER', 'Joining Letter', 'Joining Letter', 1, 2, TRUE, FALSE, '{"icon":"how_to_reg","color":"#FF00ACC1"}'),
-(4, 'INCREMENT_LETTER', 'Increment Letter', 'Increment Letter', 1, 3, TRUE, FALSE, '{"icon":"trending_up","color":"#FF6C63FF"}'),
-(5, 'PAYSLIP', 'Payslip', 'Payslip', 1, 4, TRUE, FALSE, '{"icon":"receipt_long","color":"#FFFDCB6E"}'),
-(6, 'CERTIFICATE', 'Certificate', 'Certificate', 1, 5, TRUE, FALSE, '{"icon":"verified","color":"#FFFF6584"}'),
-(7, 'RELIEVING_LETTER', 'Relieving Letter', 'Relieving Letter', 1, 6, TRUE, FALSE, '{"icon":"exit_to_app","color":"#FFE17055"}');
+(2, 'OFFER_LETTER', 'Offer Letter', 'Offer Letter', 1, 1, TRUE, FALSE, '{"icon":"card_membership","color":"#FF00B894","eventType":"OFFER_RECEIVED","title":"Received offer from "}'),
+(3, 'JOINING_LETTER', 'Joining Letter', 'Joining Letter', 1, 2, TRUE, FALSE, '{"icon":"how_to_reg","color":"#FF00ACC1","eventType":"COMPANY_JOINED","title":"Joined "}'),
+(4, 'INCREMENT_LETTER', 'Increment Letter', 'Increment Letter', 1, 3, TRUE, FALSE, '{"icon":"trending_up","color":"#FF6C63FF","eventType":"INCREMENT","title":"Increment at "}'),
+(5, 'PAYSLIP', 'Payslip', 'Payslip', 1, 4, TRUE, FALSE, '{"icon":"receipt_long","color":"#FFFDCB6E","eventType":"PAYSLIP","title":"Salary record at "}'),
+(6, 'CERTIFICATE', 'Certificate', 'Certificate', 1, 5, TRUE, FALSE, '{"icon":"verified","color":"#FFFF6584","eventType":"CERTIFICATE","title":"Certificate from "}'),
+(7, 'RELIEVING_LETTER', 'Relieving Letter', 'Relieving Letter', 1, 6, TRUE, FALSE, '{"icon":"exit_to_app","color":"#FFE17055","eventType":"RELIEVED","title":"Relieved from "}'),
+(8, 'TDS_CERTIFICATE', 'TDS Certificate', 'TDS Certificate', 1, 7, TRUE, FALSE, '{"icon":"receipt","color":"#FF7C4DFF","eventType":"CERTIFICATE","title":"TDS Certificate from "}'),
+(9, 'CONFIRMATION_LETTER', 'Confirmation Letter', 'Confirmation Letter', 1, 8, TRUE, FALSE, '{"icon":"task_alt","color":"#FF26A69A","eventType":"CONFIRMED","title":"Confirmation at "}');
 SELECT setval('lookups_lookupid_seq', (SELECT MAX(lookupid) FROM lookups));

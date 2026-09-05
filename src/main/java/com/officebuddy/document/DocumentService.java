@@ -4,16 +4,20 @@ import com.officebuddy.company.Company;
 import com.officebuddy.company.CompanyRepository;
 import com.officebuddy.document.dto.DocumentRequest;
 import com.officebuddy.document.dto.DocumentResponse;
+import com.officebuddy.lookup.Lookup;
+import com.officebuddy.lookup.LookupRepository;
 import com.officebuddy.storage.StorageService;
 import com.officebuddy.timeline.TimelineRepository;
 import com.officebuddy.timeline.TimelineService;
 import com.officebuddy.timeline.dto.TimelineEventRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -26,6 +30,8 @@ public class DocumentService {
     private final StorageService storageService;
     private final TimelineRepository timelineRepository;
     private final TimelineService timelineService;
+    private final LookupRepository lookupRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<DocumentResponse> getDocuments(UUID userId, UUID companyId) {
         List<Document> documents;
@@ -81,29 +87,41 @@ public class DocumentService {
         eventRequest.setCompanyName(companyName);
         eventRequest.setEventDate(document.getDocumentDate() != null ? document.getDocumentDate() : document.getUploadedAt().toLocalDate());
 
-        String t = document.getType();
-        if ("OFFER_LETTER".equals(t)) {
-            eventRequest.setTitle("Received offer from " + companyName);
-            eventRequest.setEventType("OFFER_RECEIVED");
-        } else if ("JOINING_LETTER".equals(t)) {
-            eventRequest.setTitle("Joined " + companyName);
-            eventRequest.setEventType("COMPANY_JOINED");
-        } else if ("INCREMENT_LETTER".equals(t)) {
-            eventRequest.setTitle("Increment at " + companyName);
-            eventRequest.setEventType("INCREMENT");
-        } else if ("PAYSLIP".equals(t)) {
-            eventRequest.setTitle("Salary record at " + companyName);
-            eventRequest.setEventType("PAYSLIP");
-        } else if ("CERTIFICATE".equals(t)) {
-            eventRequest.setTitle("Certificate from " + companyName);
-            eventRequest.setEventType("CERTIFICATE");
-        } else if ("RELIEVING_LETTER".equals(t)) {
-            eventRequest.setTitle("Relieved from " + companyName);
-            eventRequest.setEventType("RELIEVED");
-        } else {
-            eventRequest.setTitle("Document uploaded for " + companyName);
-            eventRequest.setEventType("DOCUMENT_UPLOADED");
+        // Dynamic lookup: fetch eventType/title from lookups table remarks JSON, fallback to hard-coded
+        String eventType = "DOCUMENT_UPLOADED";
+        String titlePrefix = "Document uploaded for ";
+        try {
+            var lookupOpt = lookupRepository.findByLookupCode(document.getType());
+            if (lookupOpt.isPresent() && lookupOpt.get().getRemarks() != null) {
+                Map<String, Object> map = objectMapper.readValue(lookupOpt.get().getRemarks(), Map.class);
+                if (map.containsKey("eventType")) eventType = (String) map.get("eventType");
+                if (map.containsKey("title")) titlePrefix = (String) map.get("title");
+            } else {
+                // Fallback hard-coded for backward compat if lookup missing remarks
+                String t = document.getType();
+                if ("OFFER_LETTER".equals(t)) { eventType = "OFFER_RECEIVED"; titlePrefix = "Received offer from "; }
+                else if ("JOINING_LETTER".equals(t)) { eventType = "COMPANY_JOINED"; titlePrefix = "Joined "; }
+                else if ("INCREMENT_LETTER".equals(t)) { eventType = "INCREMENT"; titlePrefix = "Increment at "; }
+                else if ("PAYSLIP".equals(t)) { eventType = "PAYSLIP"; titlePrefix = "Salary record at "; }
+                else if ("CERTIFICATE".equals(t)) { eventType = "CERTIFICATE"; titlePrefix = "Certificate from "; }
+                else if ("RELIEVING_LETTER".equals(t)) { eventType = "RELIEVED"; titlePrefix = "Relieved from "; }
+                else if ("TDS_CERTIFICATE".equals(t)) { eventType = "CERTIFICATE"; titlePrefix = "TDS Certificate from "; }
+                else if ("CONFIRMATION_LETTER".equals(t)) { eventType = "CONFIRMED"; titlePrefix = "Confirmation at "; }
+            }
+        } catch (Exception ex) {
+            // Fallback hard-coded
+            String t = document.getType();
+            if ("OFFER_LETTER".equals(t)) { eventType = "OFFER_RECEIVED"; titlePrefix = "Received offer from "; }
+            else if ("JOINING_LETTER".equals(t)) { eventType = "COMPANY_JOINED"; titlePrefix = "Joined "; }
+            else if ("INCREMENT_LETTER".equals(t)) { eventType = "INCREMENT"; titlePrefix = "Increment at "; }
+            else if ("PAYSLIP".equals(t)) { eventType = "PAYSLIP"; titlePrefix = "Salary record at "; }
+            else if ("CERTIFICATE".equals(t)) { eventType = "CERTIFICATE"; titlePrefix = "Certificate from "; }
+            else if ("RELIEVING_LETTER".equals(t)) { eventType = "RELIEVED"; titlePrefix = "Relieved from "; }
+            else if ("TDS_CERTIFICATE".equals(t)) { eventType = "CERTIFICATE"; titlePrefix = "TDS Certificate from "; }
+            else if ("CONFIRMATION_LETTER".equals(t)) { eventType = "CONFIRMED"; titlePrefix = "Confirmation at "; }
         }
+        eventRequest.setTitle(titlePrefix + companyName);
+        eventRequest.setEventType(eventType);
         timelineService.addEvent(userId, eventRequest);
 
         return toResponse(document);
@@ -170,6 +188,8 @@ public class DocumentService {
             case "PAYSLIP" -> "PAYSLIP";
             case "CERTIFICATE" -> "CERTIFICATE";
             case "RELIEVING_LETTER" -> "RELIEVED";
+            case "TDS_CERTIFICATE" -> "CERTIFICATE";
+            case "CONFIRMATION_LETTER" -> "CONFIRMED";
             default -> "DOCUMENT_UPLOADED";
         };
     }
@@ -200,6 +220,7 @@ public class DocumentService {
 				.companyId(document.getCompanyId() != null ? document.getCompanyId().toString() : null)
 				.companyName(companyName).fileUrl(document.getFileUrl()).fileKey(document.getFileKey())
 				.fileSize(document.getFileSize()).mimeType(document.getMimeType()).tags(document.getTags())
-				.uploadedAt(document.getUploadedAt().toString()).build();
+				.documentDate(document.getDocumentDate() != null ? document.getDocumentDate().toString() : null)
+				.uploadedAt(document.getUploadedAt() != null ? document.getUploadedAt().toString() : null).build();
 	}
 }
