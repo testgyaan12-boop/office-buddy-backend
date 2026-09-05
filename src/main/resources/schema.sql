@@ -181,3 +181,29 @@ CREATE TABLE messages (
     created_at TIMESTAMP DEFAULT NOW(),
     read_at TIMESTAMP
 );
+
+-- Lookup table for document types and other dropdowns
+CREATE TABLE lookups (
+    lookupid BIGSERIAL PRIMARY KEY,
+    lookup_code VARCHAR(100) NOT NULL,
+    short_name VARCHAR(255) NOT NULL,
+    long_name VARCHAR(255),
+    parent_lookup_id BIGINT REFERENCES lookups(lookupid),
+    sorted_order INT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    remarks VARCHAR(150),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_lookups_parent ON lookups(parent_lookup_id) WHERE is_active = TRUE AND is_deleted = FALSE;
+
+INSERT INTO lookups (lookupid, lookup_code, short_name, long_name, parent_lookup_id, sorted_order, is_active, is_deleted, remarks) VALUES
+(1, 'DOC_TYPE', 'Document Type', 'Document Type', NULL, 1, TRUE, FALSE, '{"icon":"description","color":"#FF6C63FF"}'),
+(2, 'OFFER_LETTER', 'Offer Letter', 'Offer Letter', 1, 1, TRUE, FALSE, '{"icon":"card_membership","color":"#FF00B894"}'),
+(3, 'JOINING_LETTER', 'Joining Letter', 'Joining Letter', 1, 2, TRUE, FALSE, '{"icon":"how_to_reg","color":"#FF00ACC1"}'),
+(4, 'INCREMENT_LETTER', 'Increment Letter', 'Increment Letter', 1, 3, TRUE, FALSE, '{"icon":"trending_up","color":"#FF6C63FF"}'),
+(5, 'PAYSLIP', 'Payslip', 'Payslip', 1, 4, TRUE, FALSE, '{"icon":"receipt_long","color":"#FFFDCB6E"}'),
+(6, 'CERTIFICATE', 'Certificate', 'Certificate', 1, 5, TRUE, FALSE, '{"icon":"verified","color":"#FFFF6584"}'),
+(7, 'RELIEVING_LETTER', 'Relieving Letter', 'Relieving Letter', 1, 6, TRUE, FALSE, '{"icon":"exit_to_app","color":"#FFE17055"}');
+SELECT setval('lookups_lookupid_seq', (SELECT MAX(lookupid) FROM lookups));

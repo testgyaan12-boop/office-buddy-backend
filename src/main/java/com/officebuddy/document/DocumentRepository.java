@@ -29,5 +29,5 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
            "LOWER(d.fileName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "EXISTS (SELECT c FROM com.officebuddy.company.Company c WHERE c.id = d.companyId AND c.deletedAt IS NULL AND LOWER(c.name) LIKE LOWER(CONCAT('%', :query, '%')))) AND " +
            "(:type IS NULL OR d.type = :type) ORDER BY d.uploadedAt DESC")
-    List<Document> search(UUID userId, String query, DocumentType type);
+    List<Document> search(UUID userId, String query, String type);
 }

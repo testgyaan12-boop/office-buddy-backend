@@ -1,6 +1,5 @@
 package com.officebuddy.document.dto;
 
-import com.officebuddy.document.DocumentType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,12 +15,13 @@ public class DocumentResponse {
     private String id;
     private String title;
     private String fileName;
-    private DocumentType type;
+    private String type;
     private String companyId;
     private String companyName;
     private String fileUrl;
     private String fileKey;
     private long fileSize;
+    private String mimeType;
     private List<String> tags;
     private String uploadedAt;
 }

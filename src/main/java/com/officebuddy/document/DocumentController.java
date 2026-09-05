@@ -2,6 +2,7 @@ package com.officebuddy.document;
 
 import com.officebuddy.document.dto.DocumentRequest;
 import com.officebuddy.document.dto.DocumentResponse;
+import com.officebuddy.lookup.LookupService;
 import com.officebuddy.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import java.util.UUID;
 public class DocumentController {
 
     private final DocumentService documentService;
+    private final LookupService lookupService;
 
     @GetMapping
     public ResponseEntity<List<DocumentResponse>> getDocuments(
@@ -46,10 +48,13 @@ public class DocumentController {
             @RequestParam(value = "documentDate", required = false) String documentDate,
             @RequestParam(value = "tags", required = false) List<String> tags
     ) {
+        if (!lookupService.existsByCodeAndParent(type, "DOC_TYPE")) {
+            throw new RuntimeException("Invalid document type: " + type);
+        }
         var user = (User) authentication.getPrincipal();
         var request = DocumentRequest.builder()
                 .fileName(file.getOriginalFilename())
-                .type(DocumentType.valueOf(type))
+                .type(type)
                 .companyId(companyId)
                 .tags(tags)
                 .build();
@@ -69,7 +74,7 @@ public class DocumentController {
     public ResponseEntity<List<DocumentResponse>> search(
             Authentication authentication,
             @RequestParam(required = false) String q,
-            @RequestParam(required = false) DocumentType type
+            @RequestParam(required = false) String type
     ) {
         var user = (User) authentication.getPrincipal();
         return ResponseEntity.ok(documentService.search(user.getId(), q, type));

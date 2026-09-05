@@ -35,9 +35,8 @@ public class Document {
     @Column(nullable = false)
     private String fileName;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private DocumentType type;
+    private String type;
 
     private String fileKey;
 

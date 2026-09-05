@@ -3,7 +3,6 @@ package com.officebuddy.jobswitch;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.officebuddy.document.Document;
 import com.officebuddy.document.DocumentRepository;
-import com.officebuddy.document.DocumentType;
 import com.officebuddy.jobswitch.dto.JobSwitchDownloadDetailsDto;
 import com.officebuddy.jobswitch.dto.JobSwitchGenerateRequest;
 import com.officebuddy.jobswitch.dto.JobSwitchPackDto;
@@ -48,19 +47,19 @@ public class JobSwitchService {
 
         if (!custom) {
             experienceDocs = documents.stream()
-                    .filter(d -> d.getType() == DocumentType.CERTIFICATE || d.getType() == DocumentType.RELIEVING_LETTER)
+                    .filter(d -> "CERTIFICATE".equals(d.getType()) || "RELIEVING_LETTER".equals(d.getType()))
                     .toList();
-            payslips = documents.stream().filter(d -> d.getType() == DocumentType.PAYSLIP).limit(3).toList();
-            joiningDocs = documents.stream().filter(d -> d.getType() == DocumentType.JOINING_LETTER).toList();
-            incrementDocs = documents.stream().filter(d -> d.getType() == DocumentType.INCREMENT_LETTER).toList();
-            offerDocs = documents.stream().filter(d -> d.getType() == DocumentType.OFFER_LETTER).toList();
+            payslips = documents.stream().filter(d -> "PAYSLIP".equals(d.getType())).limit(3).toList();
+            joiningDocs = documents.stream().filter(d -> "JOINING_LETTER".equals(d.getType())).toList();
+            incrementDocs = documents.stream().filter(d -> "INCREMENT_LETTER".equals(d.getType())).toList();
+            offerDocs = documents.stream().filter(d -> "OFFER_LETTER".equals(d.getType())).toList();
         } else {
             var map = req.getIncludeCounts();
-            experienceDocs = getLimited(documents, Set.of(DocumentType.CERTIFICATE, DocumentType.RELIEVING_LETTER), map);
-            payslips = getLimited(documents, Set.of(DocumentType.PAYSLIP), map);
-            joiningDocs = getLimited(documents, Set.of(DocumentType.JOINING_LETTER), map);
-            incrementDocs = getLimited(documents, Set.of(DocumentType.INCREMENT_LETTER), map);
-            offerDocs = getLimited(documents, Set.of(DocumentType.OFFER_LETTER), map);
+            experienceDocs = getLimited(documents, Set.of("CERTIFICATE", "RELIEVING_LETTER"), map);
+            payslips = getLimited(documents, Set.of("PAYSLIP"), map);
+            joiningDocs = getLimited(documents, Set.of("JOINING_LETTER"), map);
+            incrementDocs = getLimited(documents, Set.of("INCREMENT_LETTER"), map);
+            offerDocs = getLimited(documents, Set.of("OFFER_LETTER"), map);
         }
 
         String selectedJson = null;
@@ -99,7 +98,7 @@ public class JobSwitchService {
         }
     }
 
-    private List<Document> getLimited(List<Document> all, Set<DocumentType> types, Map<DocumentType, Integer> map) {
+    private List<Document> getLimited(List<Document> all, Set<String> types, Map<String, Integer> map) {
         // Find count: if any of the types is in map, use that count; for Experience folder (2 types) take max of both counts if both present
         Integer count = null;
         for (var t : types) {

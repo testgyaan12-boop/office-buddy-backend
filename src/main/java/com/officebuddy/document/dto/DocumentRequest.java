@@ -1,6 +1,5 @@
 package com.officebuddy.document.dto;
 
-import com.officebuddy.document.DocumentType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class DocumentRequest {
     private String fileName;
-    private DocumentType type;
+    private String type;
     private UUID companyId;
     private LocalDate documentDate;
     private List<String> tags;
