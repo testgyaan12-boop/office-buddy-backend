@@ -17,6 +17,8 @@ public class UserDto {
     private String email;
     private String avatarUrl;
     private String headline;
+    private String role;
+    private String domain;
     private LocalDate dateOfBirth;
     private String gender;
     private String phone;

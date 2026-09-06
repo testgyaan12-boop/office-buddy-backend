@@ -37,6 +37,8 @@ public class User implements UserDetails {
 
     private String avatarUrl;
     private String headline;
+    private String role;
+    private String domain;
     private LocalDate dateOfBirth;
     private String gender;
     private String phone;
@@ -128,6 +130,8 @@ public class User implements UserDetails {
                 .email(email)
                 .avatarUrl(avatarUrl)
                 .headline(headline)
+                .role(role)
+                .domain(domain)
                 .dateOfBirth(dateOfBirth)
                 .gender(gender)
                 .phone(phone)

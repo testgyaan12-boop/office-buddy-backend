@@ -25,6 +25,8 @@ public class UserService {
         if (request.getName() != null) user.setName(request.getName());
         if (request.getAvatarUrl() != null) user.setAvatarUrl(request.getAvatarUrl());
         if (request.getHeadline() != null) user.setHeadline(request.getHeadline());
+        if (request.getRole() != null) user.setRole(request.getRole());
+        if (request.getDomain() != null) user.setDomain(request.getDomain());
         if (request.getDateOfBirth() != null) user.setDateOfBirth(request.getDateOfBirth());
         if (request.getGender() != null) user.setGender(request.getGender());
         if (request.getPhone() != null) user.setPhone(request.getPhone());
