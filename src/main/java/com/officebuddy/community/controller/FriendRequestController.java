@@ -54,6 +54,20 @@ public class FriendRequestController {
         return ResponseEntity.ok().build();
     }
 
+    @DeleteMapping("/requests/{id}")
+    public ResponseEntity<Void> cancelRequest(Authentication auth, @PathVariable UUID id) {
+        var user = (User) auth.getPrincipal();
+        communityService.cancelRequest(id, user.getId());
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/friends/{friendId}")
+    public ResponseEntity<Void> removeFriend(Authentication auth, @PathVariable UUID friendId) {
+        var user = (User) auth.getPrincipal();
+        communityService.removeFriend(user.getId(), friendId);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/friends")
     public ResponseEntity<List<FriendDto>> getFriends(Authentication auth) {
         var user = (User) auth.getPrincipal();

@@ -74,6 +74,26 @@ public class CommunityService {
         friendRequestRepository.save(request);
     }
 
+    @Transactional
+    public void cancelRequest(UUID requestId, UUID userId) {
+        var req = friendRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+        if (!req.getSenderId().equals(userId)) throw new RuntimeException("Unauthorized");
+        if (!"PENDING".equals(req.getStatus())) throw new RuntimeException("Only pending can be cancelled");
+        friendRequestRepository.delete(req);
+    }
+
+    @Transactional
+    public void removeFriend(UUID userId, UUID friendId) {
+        var req1 = friendRequestRepository.findBySenderIdAndReceiverId(userId, friendId);
+        var req2 = friendRequestRepository.findBySenderIdAndReceiverId(friendId, userId);
+        FriendRequest toDelete = null;
+        if (req1.isPresent() && "ACCEPTED".equals(req1.get().getStatus())) toDelete = req1.get();
+        else if (req2.isPresent() && "ACCEPTED".equals(req2.get().getStatus())) toDelete = req2.get();
+        if (toDelete == null) throw new RuntimeException("Friend not found or not connected");
+        friendRequestRepository.delete(toDelete);
+    }
+
     public List<UUID> getFriendIds(UUID userId) {
         var sent = friendRequestRepository.findBySenderIdOrderByCreatedAtDesc(userId).stream()
                 .filter(r -> r.getStatus().equals("ACCEPTED"))
