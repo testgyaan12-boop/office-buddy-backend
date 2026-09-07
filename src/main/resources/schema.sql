@@ -218,3 +218,57 @@ SELECT setval('lookups_lookupid_seq', (SELECT MAX(lookupid) FROM lookups));
 ALTER TABLE timeline_events ADD COLUMN IF NOT EXISTS document_date DATE;
 ALTER TABLE timeline_events ADD COLUMN IF NOT EXISTS uploaded_at TIMESTAMP;
 ALTER TABLE timeline_events ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+
+-- Reminder lookups
+INSERT INTO lookups (lookupid, lookup_code, short_name, long_name, parent_lookup_id, sorted_order, is_active, is_deleted, remarks) VALUES
+(20, 'REMINDER_PROFESSIONAL', 'Professional', 'Professional Reminders', NULL, 2, TRUE, FALSE, '{"icon":"work","color":"#FF6366F1"}'),
+(21, 'REMINDER_PERSONAL', 'Personal', 'Personal Reminders', NULL, 3, TRUE, FALSE, '{"icon":"person","color":"#FF14B8A6"}'),
+(22, 'PROBATION_COMPLETION', 'Probation completion', 'Probation completion', 20, 1, TRUE, FALSE, '{"icon":"verified_user","color":"#FF6366F1"}'),
+(23, 'APPRAISAL_DISCUSSION', 'Appraisal discussion', 'Appraisal discussion', 20, 2, TRUE, FALSE, '{"icon":"rate_review","color":"#FF8B5CF6"}'),
+(24, 'NOTICE_PERIOD_END', 'Notice period end', 'Notice period end', 20, 3, TRUE, FALSE, '{"icon":"event_busy","color":"#FFF59E0B"}'),
+(25, 'CERTIFICATION_EXPIRY', 'Certification expiry', 'Certification expiry', 20, 4, TRUE, FALSE, '{"icon":"card_membership","color":"#FF14B8A6"}'),
+(26, 'BIRTHDAY', 'Birthday', 'Birthday', 21, 1, TRUE, FALSE, '{"icon":"cake","color":"#FFF43F5E"}'),
+(27, 'INSURANCE', 'Insurance', 'Insurance', 21, 2, TRUE, FALSE, '{"icon":"health_and_safety","color":"#FF14B8A6"}'),
+(28, 'EMI', 'EMI', 'EMI', 21, 3, TRUE, FALSE, '{"icon":"payments","color":"#FFF59E0B"}'),
+(29, 'SIP', 'SIP', 'SIP', 21, 4, TRUE, FALSE, '{"icon":"trending_up","color":"#FF6366F1"}'),
+(30, 'RENT', 'Rent', 'Rent', 21, 5, TRUE, FALSE, '{"icon":"house","color":"#FF8B5CF6"}'),
+(31, 'INSURANCE_EXPIRY', 'Insurance expiry', 'Insurance expiry', 21, 6, TRUE, FALSE, '{"icon":"shield","color":"#FFEF4444"}');
+SELECT setval('lookups_lookupid_seq', (SELECT MAX(lookupid) FROM lookups));
+
+-- Reminders + history with audit
+CREATE TABLE IF NOT EXISTS reminders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    jd TEXT,
+    type VARCHAR(100) NOT NULL,
+    category VARCHAR(50) NOT NULL CHECK (category IN ('professional','personal')),
+    remind_at TIMESTAMP NOT NULL,
+    notify_before_minutes INT NOT NULL DEFAULT 60,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_by UUID,
+    updated_by UUID
+);
+CREATE INDEX IF NOT EXISTS idx_reminders_user_id ON reminders(user_id);
+CREATE INDEX IF NOT EXISTS idx_reminders_remind_at ON reminders(remind_at) WHERE is_deleted = FALSE;
+ALTER TABLE reminders ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id) ON DELETE SET NULL;
+ALTER TABLE reminders ADD COLUMN IF NOT EXISTS file_key VARCHAR(512);
+ALTER TABLE reminders ADD COLUMN IF NOT EXISTS file_url VARCHAR(1024);
+ALTER TABLE reminders ADD COLUMN IF NOT EXISTS file_name VARCHAR(255);
+
+CREATE TABLE IF NOT EXISTS reminder_history (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    reminder_id UUID NOT NULL REFERENCES reminders(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    device_id VARCHAR(255),
+    notification_sent_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    status VARCHAR(50) DEFAULT 'SENT',
+    channel VARCHAR(50) DEFAULT 'local',
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_reminder_history_reminder_id ON reminder_history(reminder_id);
+CREATE INDEX IF NOT EXISTS idx_reminder_history_user_id ON reminder_history(user_id);
