@@ -3,7 +3,7 @@
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -13,7 +13,7 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE companies (
+CREATE TABLE IF NOT EXISTS companies (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE companies (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE documents (
+CREATE TABLE IF NOT EXISTS documents (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     company_id UUID REFERENCES companies(id) ON DELETE SET NULL,
@@ -44,14 +44,14 @@ CREATE TABLE documents (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE document_tags (
+CREATE TABLE IF NOT EXISTS document_tags (
     document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     tag VARCHAR(100) NOT NULL
 );
 
-CREATE INDEX idx_document_tags_document_id ON document_tags(document_id);
+CREATE INDEX IF NOT EXISTS idx_document_tags_document_id ON document_tags(document_id);
 
-CREATE TABLE timeline_events (
+CREATE TABLE IF NOT EXISTS timeline_events (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     company_id UUID REFERENCES companies(id) ON DELETE SET NULL,
@@ -66,7 +66,7 @@ CREATE TABLE timeline_events (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE job_switch_packs (
+CREATE TABLE IF NOT EXISTS job_switch_packs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     status VARCHAR(50) DEFAULT 'PROCESSING',
@@ -76,14 +76,14 @@ CREATE TABLE job_switch_packs (
 );
 
 -- Indexes
-CREATE INDEX idx_companies_user_id ON companies(user_id);
-CREATE INDEX idx_documents_user_id ON documents(user_id);
-CREATE INDEX idx_documents_company_id ON documents(company_id);
-CREATE INDEX idx_timeline_events_user_id ON timeline_events(user_id);
-CREATE INDEX idx_job_switch_packs_user_id ON job_switch_packs(user_id);
+CREATE INDEX IF NOT EXISTS idx_companies_user_id ON companies(user_id);
+CREATE INDEX IF NOT EXISTS idx_documents_user_id ON documents(user_id);
+CREATE INDEX IF NOT EXISTS idx_documents_company_id ON documents(company_id);
+CREATE INDEX IF NOT EXISTS idx_timeline_events_user_id ON timeline_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_job_switch_packs_user_id ON job_switch_packs(user_id);
 
 --goals table
-CREATE TABLE goals (
+CREATE TABLE IF NOT EXISTS goals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     title VARCHAR(255) NOT NULL,
@@ -97,7 +97,7 @@ CREATE TABLE goals (
     CONSTRAINT fk_goals_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 --todos table
-CREATE TABLE todos (
+CREATE TABLE IF NOT EXISTS todos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     goal_id UUID,
@@ -113,12 +113,12 @@ CREATE TABLE todos (
     CONSTRAINT fk_todos_goal FOREIGN KEY (goal_id) REFERENCES goals(id) ON DELETE SET NULL
 );
 -- Optional indexes for performance
-CREATE INDEX idx_goals_user_id ON goals(user_id);
-CREATE INDEX idx_goals_status ON goals(status);
-CREATE INDEX idx_todos_user_id ON todos(user_id);
-CREATE INDEX idx_todos_type ON todos(type);
-CREATE INDEX idx_todos_due_date ON todos(due_date);
-CREATE INDEX idx_todos_goal_id ON todos(goal_id);
+CREATE INDEX IF NOT EXISTS idx_goals_user_id ON goals(user_id);
+CREATE INDEX IF NOT EXISTS idx_goals_status ON goals(status);
+CREATE INDEX IF NOT EXISTS idx_todos_user_id ON todos(user_id);
+CREATE INDEX IF NOT EXISTS idx_todos_type ON todos(type);
+CREATE INDEX IF NOT EXISTS idx_todos_due_date ON todos(due_date);
+CREATE INDEX IF NOT EXISTS idx_todos_goal_id ON todos(goal_id);
 
 --profile coulumn
 ALTER TABLE users ADD COLUMN date_of_birth DATE;
@@ -152,22 +152,22 @@ ALTER TABLE users ADD COLUMN reset_token VARCHAR(255);
 
 
  DB Schema (new tables)
-CREATE TABLE friend_requests (
+CREATE TABLE IF NOT EXISTS friend_requests (
     id UUID PRIMARY KEY,
     sender_id UUID REFERENCES users(id) NOT NULL,
     receiver_id UUID REFERENCES users(id) NOT NULL,
-    status VARCHAR(20) DEFAULT 'PENDING',  -- PENDING, ACCEPTED, REJECTED
+    status VARCHAR(20) DEFAULT 'PENDING',
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP
 );
-CREATE TABLE friends (
+CREATE TABLE IF NOT EXISTS friends (
     id UUID PRIMARY KEY,
     user_id UUID REFERENCES users(id) NOT NULL,
     friend_id UUID REFERENCES users(id) NOT NULL,
     created_at TIMESTAMP DEFAULT NOW(),
     UNIQUE(user_id, friend_id)
 );
-CREATE TABLE conversations (
+CREATE TABLE IF NOT EXISTS conversations (
     id UUID PRIMARY KEY,
     user_a_id UUID REFERENCES users(id) NOT NULL,
     user_b_id UUID REFERENCES users(id) NOT NULL,
@@ -175,19 +175,19 @@ CREATE TABLE conversations (
     last_message_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW()
 );
-CREATE TABLE messages (
+CREATE TABLE IF NOT EXISTS messages (
     id UUID PRIMARY KEY,
     conversation_id UUID REFERENCES conversations(id) NOT NULL,
     sender_id UUID REFERENCES users(id) NOT NULL,
     content TEXT,
-    type VARCHAR(20) DEFAULT 'TEXT',  -- TEXT, IMAGE, PDF
+    type VARCHAR(20) DEFAULT 'TEXT',
     file_url VARCHAR(500),
     created_at TIMESTAMP DEFAULT NOW(),
     read_at TIMESTAMP
 );
 
 -- Lookup table for document types and other dropdowns
-CREATE TABLE lookups (
+CREATE TABLE IF NOT EXISTS lookups (
     lookupid BIGSERIAL PRIMARY KEY,
     lookup_code VARCHAR(100) NOT NULL,
     short_name VARCHAR(255) NOT NULL,
@@ -200,7 +200,7 @@ CREATE TABLE lookups (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX idx_lookups_parent ON lookups(parent_lookup_id) WHERE is_active = TRUE AND is_deleted = FALSE;
+CREATE INDEX IF NOT EXISTS idx_lookups_parent ON lookups(parent_lookup_id) WHERE is_active = TRUE AND is_deleted = FALSE;
 
 INSERT INTO lookups (lookupid, lookup_code, short_name, long_name, parent_lookup_id, sorted_order, is_active, is_deleted, remarks) VALUES
 (1, 'DOC_TYPE', 'Document Type', 'Document Type', NULL, 1, TRUE, FALSE, '{"icon":"description","color":"#FF6C63FF"}'),
@@ -211,7 +211,8 @@ INSERT INTO lookups (lookupid, lookup_code, short_name, long_name, parent_lookup
 (6, 'CERTIFICATE', 'Certificate', 'Certificate', 1, 5, TRUE, FALSE, '{"icon":"verified","color":"#FFFF6584","eventType":"CERTIFICATE","title":"Certificate from "}'),
 (7, 'RELIEVING_LETTER', 'Relieving Letter', 'Relieving Letter', 1, 6, TRUE, FALSE, '{"icon":"exit_to_app","color":"#FFE17055","eventType":"RELIEVED","title":"Relieved from "}'),
 (8, 'TDS_CERTIFICATE', 'TDS Certificate', 'TDS Certificate', 1, 7, TRUE, FALSE, '{"icon":"receipt","color":"#FF7C4DFF","eventType":"CERTIFICATE","title":"TDS Certificate from "}'),
-(9, 'CONFIRMATION_LETTER', 'Confirmation Letter', 'Confirmation Letter', 1, 8, TRUE, FALSE, '{"icon":"task_alt","color":"#FF26A69A","eventType":"CONFIRMED","title":"Confirmation at "}');
+(9, 'CONFIRMATION_LETTER', 'Confirmation Letter', 'Confirmation Letter', 1, 8, TRUE, FALSE, '{"icon":"task_alt","color":"#FF26A69A","eventType":"CONFIRMED","title":"Confirmation at "}')
+ON CONFLICT (lookupid) DO NOTHING;
 SELECT setval('lookups_lookupid_seq', (SELECT MAX(lookupid) FROM lookups));
 
 -- Timeline dual date (ReceivedAt / UploadAt parity with documents)
@@ -233,7 +234,8 @@ INSERT INTO lookups (lookupid, lookup_code, short_name, long_name, parent_lookup
 (28, 'EMI', 'EMI', 'EMI', 21, 3, TRUE, FALSE, '{"icon":"payments","color":"#FFF59E0B"}'),
 (29, 'SIP', 'SIP', 'SIP', 21, 4, TRUE, FALSE, '{"icon":"trending_up","color":"#FF6366F1"}'),
 (30, 'RENT', 'Rent', 'Rent', 21, 5, TRUE, FALSE, '{"icon":"house","color":"#FF8B5CF6"}'),
-(31, 'INSURANCE_EXPIRY', 'Insurance expiry', 'Insurance expiry', 21, 6, TRUE, FALSE, '{"icon":"shield","color":"#FFEF4444"}');
+(31, 'INSURANCE_EXPIRY', 'Insurance expiry', 'Insurance expiry', 21, 6, TRUE, FALSE, '{"icon":"shield","color":"#FFEF4444"}')
+ON CONFLICT (lookupid) DO NOTHING;
 SELECT setval('lookups_lookupid_seq', (SELECT MAX(lookupid) FROM lookups));
 
 -- Reminders + history with audit
@@ -273,3 +275,79 @@ CREATE TABLE IF NOT EXISTS reminder_history (
 );
 CREATE INDEX IF NOT EXISTS idx_reminder_history_reminder_id ON reminder_history(reminder_id);
 CREATE INDEX IF NOT EXISTS idx_reminder_history_user_id ON reminder_history(user_id);
+
+-- Ad & Subscription (Ad Mediation / Fallback)
+CREATE TABLE IF NOT EXISTS ad_provider_master (
+    id BIGSERIAL PRIMARY KEY,
+    provider_name VARCHAR(50) NOT NULL,
+    platform VARCHAR(20) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    priority INT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE(provider_name, platform)
+);
+CREATE TABLE IF NOT EXISTS ad_config (
+    id BIGSERIAL PRIMARY KEY,
+    provider_id BIGINT NOT NULL REFERENCES ad_provider_master(id) ON DELETE CASCADE,
+    ad_type VARCHAR(30) NOT NULL,
+    placement VARCHAR(50) NOT NULL,
+    ad_unit_id VARCHAR(255) NOT NULL,
+    app_id VARCHAR(255),
+    priority INT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_ad_config_provider ON ad_config(provider_id);
+CREATE INDEX IF NOT EXISTS idx_ad_config_placement ON ad_config(placement, ad_type) WHERE is_active = TRUE;
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    plan_name VARCHAR(50) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    razorpay_order_id VARCHAR(100),
+    razorpay_payment_id VARCHAR(100),
+    razorpay_signature VARCHAR(255),
+    start_date TIMESTAMP NOT NULL DEFAULT NOW(),
+    expiry_date TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id) WHERE status = 'ACTIVE';
+
+CREATE TABLE IF NOT EXISTS user_ad_preference (
+    id BIGSERIAL PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+    show_ads BOOLEAN NOT NULL DEFAULT TRUE,
+    last_ad_shown TIMESTAMP,
+    total_ads_seen INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ad_request_log (
+    id BIGSERIAL PRIMARY KEY,
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    provider VARCHAR(50) NOT NULL,
+    placement VARCHAR(50) NOT NULL,
+    ad_type VARCHAR(30) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    error_code VARCHAR(100),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_ad_log_user ON ad_request_log(user_id, created_at DESC);
+
+INSERT INTO ad_provider_master (provider_name, platform, priority, is_active) VALUES
+('ADMOB','ANDROID',1,TRUE),
+('FACEBOOK','ANDROID',2,TRUE),
+('ADSENSE','WEB',1,TRUE),
+('FACEBOOK','WEB',2,TRUE),
+('ADMOB','IOS',1,TRUE)
+ON CONFLICT (provider_name, platform) DO NOTHING;
+
+INSERT INTO ad_config (provider_id, ad_type, placement, ad_unit_id, priority, is_active) VALUES
+((SELECT id FROM ad_provider_master WHERE provider_name='ADMOB' AND platform='ANDROID'), 'BANNER','HOME','ca-app-pub-3940256099942544/6300978111',1,TRUE),
+((SELECT id FROM ad_provider_master WHERE provider_name='ADSENSE' AND platform='WEB'), 'BANNER','HOME','ca-pub-3940256099942544',1,TRUE)
+ON CONFLICT DO NOTHING;
