@@ -218,6 +218,7 @@ SELECT setval('lookups_lookupid_seq', (SELECT MAX(lookupid) FROM lookups));
 ALTER TABLE timeline_events ADD COLUMN IF NOT EXISTS document_date DATE;
 ALTER TABLE timeline_events ADD COLUMN IF NOT EXISTS uploaded_at TIMESTAMP;
 ALTER TABLE timeline_events ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+ALTER TABLE timeline_events ADD COLUMN IF NOT EXISTS document_id UUID REFERENCES documents(id) ON DELETE SET NULL;
 
 -- Reminder lookups
 INSERT INTO lookups (lookupid, lookup_code, short_name, long_name, parent_lookup_id, sorted_order, is_active, is_deleted, remarks) VALUES

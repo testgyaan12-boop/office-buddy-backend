@@ -9,6 +9,7 @@ import java.util.UUID;
 @Data
 public class TimelineEventRequest {
     private UUID companyId;
+    private UUID documentId;
     private String title;
     private String description;
     private String eventType;

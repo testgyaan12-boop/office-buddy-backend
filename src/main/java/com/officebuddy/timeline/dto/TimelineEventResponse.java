@@ -14,6 +14,8 @@ public class TimelineEventResponse {
     private String title;
     private String description;
     private String eventType;
+    private String companyId;
+    private String documentId;
     private String companyName;
     private String eventDate;
     private String documentDate;

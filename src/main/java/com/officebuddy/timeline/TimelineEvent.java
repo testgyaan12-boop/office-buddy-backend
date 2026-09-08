@@ -27,6 +27,8 @@ public class TimelineEvent {
 
     private UUID companyId;
 
+    private UUID documentId;
+
     @Column(nullable = false)
     private String title;
 

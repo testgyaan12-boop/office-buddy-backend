@@ -84,6 +84,7 @@ public class DocumentService {
         var companyName = company != null ? company.getName() : "Unknown";
         var eventRequest = new TimelineEventRequest();
         eventRequest.setCompanyId(document.getCompanyId());
+        eventRequest.setDocumentId(document.getId());
         eventRequest.setCompanyName(companyName);
         eventRequest.setEventDate(document.getDocumentDate() != null ? document.getDocumentDate() : document.getUploadedAt().toLocalDate());
         eventRequest.setDocumentDate(document.getDocumentDate());
