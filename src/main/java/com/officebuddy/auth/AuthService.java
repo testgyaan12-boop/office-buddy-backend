@@ -2,6 +2,7 @@ package com.officebuddy.auth;
 
 import com.officebuddy.adAndSubscription.subscription.service.SubscriptionService;
 import com.officebuddy.auth.dto.*;
+import com.officebuddy.security.SecurityConfigService;
 import com.officebuddy.auth.security.JwtService;
 import com.officebuddy.user.User;
 import com.officebuddy.user.UserRepository;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
@@ -30,6 +32,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
     private final SubscriptionService subscriptionService;
+    private final SecurityConfigService securityConfigService;
 
     private static final int OTP_EXPIRY_MINUTES = 15;
 
@@ -116,6 +119,15 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        var preUser = userRepository.findByEmail(request.getEmail()).orElse(null);
+        if (preUser != null && preUser.getAccountLockedUntil() != null) {
+            if (preUser.getAccountLockedUntil().isAfter(LocalDateTime.now())) {
+                throw new RuntimeException("Account locked due to multiple failed login attempts. Try again after " + fmtLockTime(preUser.getAccountLockedUntil()) + ".");
+            }
+            preUser.setAccountLockedUntil(null);
+            preUser.setFailedLoginAttempts(0);
+            userRepository.save(preUser);
+        }
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -124,6 +136,14 @@ public class AuthService {
                     )
             );
         } catch (BadCredentialsException e) {
+            LocalDateTime lockedUntil = recordFailedAttempt(request.getEmail());
+            if (lockedUntil != null) {
+                throw new RuntimeException("Account locked due to multiple failed login attempts. Try again after " + fmtLockTime(lockedUntil) + ".");
+            }
+            int remaining = remainingAttempts(request.getEmail());
+            if (remaining > 0) {
+                throw new RuntimeException("Invalid email or password. " + remaining + (remaining == 1 ? " attempt" : " attempts") + " remaining before account lock.");
+            }
             throw new RuntimeException("Invalid email or password");
         }
 
@@ -141,6 +161,10 @@ public class AuthService {
         if (!user.isEmailVerified()) {
             throw new RuntimeException("Please verify your email before logging in");
         }
+
+        user.setFailedLoginAttempts(0);
+        user.setAccountLockedUntil(null);
+        userRepository.save(user);
 
         var accessToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
@@ -194,6 +218,43 @@ public class AuthService {
         return Map.of("message", "Password reset successfully. You can now log in with your new password.");
     }
 
+    private LocalDateTime recordFailedAttempt(String email) {
+        var user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) return null;
+        int attempts = (user.getFailedLoginAttempts() == null ? 0 : user.getFailedLoginAttempts()) + 1;
+        user.setFailedLoginAttempts(attempts);
+        int maxAttempts = securityConfigService.getInt(SecurityConfigService.LOGIN_MAX_ATTEMPTS, 5);
+        if (attempts < maxAttempts) {
+            userRepository.save(user);
+            return null;
+        }
+        int lockHours = securityConfigService.getInt(SecurityConfigService.LOGIN_LOCK_HOURS, 12);
+        LocalDateTime lockedUntil = LocalDateTime.now().plusHours(lockHours);
+        user.setAccountLockedUntil(lockedUntil);
+        userRepository.save(user);
+        if (securityConfigService.isEnabled(SecurityConfigService.LOGIN_LOCK_EMAIL, true)) {
+            try {
+                String resp = emailService.sendAccountLockedEmail(user.getEmail(), user.getName(), lockHours, fmtLockTime(lockedUntil));
+                log.info("Account lock email response for {}: {}", user.getEmail(), resp);
+            } catch (Exception e) {
+                log.warn("Account lock email failed for {}: {}", user.getEmail(), e.getMessage());
+            }
+        }
+        return lockedUntil;
+    }
+
+    private int remainingAttempts(String email) {
+        var user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) return -1;
+        int maxAttempts = securityConfigService.getInt(SecurityConfigService.LOGIN_MAX_ATTEMPTS, 5);
+        int used = user.getFailedLoginAttempts() == null ? 0 : user.getFailedLoginAttempts();
+        return Math.max(0, maxAttempts - used);
+    }
+
+    private String fmtLockTime(LocalDateTime t) {
+        return t.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"));
+    }
+
     public AuthResponse refreshToken(String refreshToken) {
         var email = jwtService.extractUsername(refreshToken);
         var user = userRepository.findByEmail(email)
@@ -201,6 +262,15 @@ public class AuthService {
 
         if (!jwtService.isTokenValid(refreshToken, user)) {
             throw new RuntimeException("Invalid refresh token");
+        }
+
+        if (user.getAccountLockedUntil() != null) {
+            if (user.getAccountLockedUntil().isAfter(LocalDateTime.now())) {
+                throw new RuntimeException("Account locked due to multiple failed login attempts. Try again after " + fmtLockTime(user.getAccountLockedUntil()) + ".");
+            }
+            user.setAccountLockedUntil(null);
+            user.setFailedLoginAttempts(0);
+            userRepository.save(user);
         }
 
         if (Integer.valueOf(1).equals(user.getIsDeleted())) {

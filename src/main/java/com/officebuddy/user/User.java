@@ -74,6 +74,13 @@ public class User extends BaseEntity implements UserDetails {
 
     private String resetToken;
 
+    @Builder.Default
+    @Column(name = "failed_login_attempts", nullable = false)
+    private Integer failedLoginAttempts = 0;
+
+    @Column(name = "account_locked_until")
+    private LocalDateTime accountLockedUntil;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();

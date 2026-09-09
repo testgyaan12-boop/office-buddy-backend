@@ -477,6 +477,23 @@ ALTER TABLE reminders DROP COLUMN IF EXISTS updated_by;
 ALTER TABLE reminders ADD COLUMN IF NOT EXISTS created_by BIGINT;
 ALTER TABLE reminders ADD COLUMN IF NOT EXISTS updated_by BIGINT;
 
+CREATE TABLE IF NOT EXISTS security_config (
+    id BIGSERIAL PRIMARY KEY,
+    config_key VARCHAR(100) NOT NULL UNIQUE,
+    config_value VARCHAR(255) NOT NULL,
+    description VARCHAR(255),
+    is_active INTEGER NOT NULL DEFAULT 1,
+    remarks VARCHAR(255),
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    created_by BIGINT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_by BIGINT,
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS account_locked_until TIMESTAMP;
+
 CREATE TABLE IF NOT EXISTS user_storage (
     id BIGSERIAL PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE UNIQUE,

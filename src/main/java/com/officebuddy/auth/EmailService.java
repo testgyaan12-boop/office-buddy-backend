@@ -83,6 +83,43 @@ public class EmailService {
         return sendEmail(to, subject, html);
     }
 
+    public String sendAccountLockedEmail(String to, String name, int lockHours, String unlockTime) {
+        String subject = "Your OfficeBuddy account has been locked";
+        String html = """
+            <html>
+            <body style="font-family: Arial, sans-serif; padding: 40px; background: #f4f4f4;">
+                <div style="max-width: 480px; margin: auto; background: white; border-radius: 12px; padding: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+                    <h2 style="color: #dc2626; text-align: center;">Account locked</h2>
+                    <p style="color: #666; line-height: 1.6;">Hi %s,</p>
+                    <p style="color: #666; line-height: 1.6;">Your account has been locked for %d hours due to multiple failed login attempts with incorrect credentials.</p>
+                    <p style="color: #666; line-height: 1.6;">It will unlock automatically at <b>%s</b>. If this wasn't you, please reset your password immediately after unlock.</p>
+                    <p style="color: #999; font-size: 12px; text-align: center; margin-top: 24px;">If you didn't attempt to log in, please contact support.</p>
+                </div>
+            </body>
+            </html>
+            """.formatted(name, lockHours, unlockTime);
+
+        return sendEmail(to, subject, html);
+    }
+
+    public String sendAccountUnlockedEmail(String to, String name) {
+        String subject = "Your OfficeBuddy account is unlocked";
+        String html = """
+            <html>
+            <body style="font-family: Arial, sans-serif; padding: 40px; background: #f4f4f4;">
+                <div style="max-width: 480px; margin: auto; background: white; border-radius: 12px; padding: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+                    <h2 style="color: #16a34a; text-align: center;">Account unlocked</h2>
+                    <p style="color: #666; line-height: 1.6;">Hi %s,</p>
+                    <p style="color: #666; line-height: 1.6;">Your account lock period is over and your account is active again. You can now log in.</p>
+                    <p style="color: #666; line-height: 1.6;">If you forgot your password, use the Forgot Password option in the app to reset it.</p>
+                </div>
+            </body>
+            </html>
+            """.formatted(name);
+
+        return sendEmail(to, subject, html);
+    }
+
     private String sendEmail(String to, String subject, String html) {
         var headers = new HttpHeaders();
         headers.setBearerAuth(resendApiKey);
