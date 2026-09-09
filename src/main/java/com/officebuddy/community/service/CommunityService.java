@@ -245,7 +245,7 @@ public class CommunityService {
                 .receiverId(r.getReceiverId().toString())
                 .receiverName(receiver != null ? receiver.getName() : "Unknown")
                 .status(r.getStatus())
-                .createdAt(r.getCreatedAt())
+                .createdAt(r.getCreatedAt() != null ? new java.sql.Timestamp(r.getCreatedAt().getTime()).toLocalDateTime() : null)
                 .build();
     }
 
@@ -257,7 +257,7 @@ public class CommunityService {
                 .content(m.getContent())
                 .type(m.getType())
                 .fileUrl(m.getFileUrl())
-                .createdAt(m.getCreatedAt())
+                .createdAt(m.getCreatedAt() != null ? new java.sql.Timestamp(m.getCreatedAt().getTime()).toLocalDateTime() : null)
                 .read(m.getReadAt() != null)
                 .build();
     }

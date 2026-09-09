@@ -7,6 +7,7 @@ import com.officebuddy.document.dto.DocumentResponse;
 import com.officebuddy.lookup.Lookup;
 import com.officebuddy.lookup.LookupRepository;
 import com.officebuddy.storage.StorageService;
+import com.officebuddy.storage.quota.service.StorageQuotaService;
 import com.officebuddy.timeline.TimelineRepository;
 import com.officebuddy.timeline.TimelineService;
 import com.officebuddy.timeline.dto.TimelineEventRequest;
@@ -31,6 +32,7 @@ public class DocumentService {
     private final TimelineRepository timelineRepository;
     private final TimelineService timelineService;
     private final LookupRepository lookupRepository;
+    private final StorageQuotaService quotaService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<DocumentResponse> getDocuments(UUID userId, UUID companyId) {
@@ -60,6 +62,10 @@ public class DocumentService {
             MultipartFile file,
             DocumentRequest request
     ) {
+        if (!quotaService.canUpload(userId, file.getSize())) {
+            var q = quotaService.getOrCreate(userId);
+            throw new RuntimeException("Storage quota exceeded: " + q.getUsedBytes() + "/" + q.getAllocatedBytes() + " bytes. Upgrade required.");
+        }
         var storageResult = storageService.uploadFile(file);
 
         var document = Document.builder()
@@ -77,6 +83,7 @@ public class DocumentService {
                 .build();
 
         documentRepository.save(document);
+        quotaService.incrementUsed(userId, file.getSize());
 
         var company = document.getCompanyId() != null
                 ? companyRepository.findById(document.getCompanyId()).orElse(null)
@@ -155,6 +162,7 @@ public class DocumentService {
         var now = LocalDateTime.now();
         document.setDeletedAt(now);
         documentRepository.save(document);
+        quotaService.recalculate(userId);
 
         // Also soft delete timeline event for this document (so recent & timeline hide)
         try {
@@ -167,7 +175,7 @@ public class DocumentService {
                 if (expectedType.equals(e.getEventType())) {
                     // Match by company and type, delete most recent one
                     e.setDeletedAt(now);
-                    e.setUpdatedAt(now);
+                    e.setUpdatedAt(new java.util.Date());
                     timelineRepository.save(e);
                     break;
                 }

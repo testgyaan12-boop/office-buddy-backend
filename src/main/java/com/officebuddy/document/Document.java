@@ -1,8 +1,9 @@
 package com.officebuddy.document;
 
+import com.officebuddy.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.experimental.SuperBuilder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,10 +16,10 @@ import java.util.UUID;
 @Entity
 @Table(name = "documents")
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Document {
+public class Document extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -56,18 +57,10 @@ public class Document {
     @Column(updatable = false)
     private LocalDateTime uploadedAt;
 
-    private LocalDateTime updatedAt;
-
     private LocalDateTime deletedAt;
 
     @PrePersist
     protected void onCreate() {
         uploadedAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
 }

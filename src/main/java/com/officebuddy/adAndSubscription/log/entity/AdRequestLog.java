@@ -1,8 +1,10 @@
 package com.officebuddy.adAndSubscription.log.entity;
 
+import com.officebuddy.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.experimental.SuperBuilder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,10 +14,10 @@ import java.util.UUID;
 @Entity
 @Table(name = "ad_request_log")
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AdRequestLog {
+public class AdRequestLog extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,11 +42,4 @@ public class AdRequestLog {
     @Column(name = "error_code")
     private String errorCode;
 
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
 }

@@ -14,17 +14,17 @@ public class LookupService {
     public List<Lookup> getByParentCode(String parentCode) {
         var parent = lookupRepository.findByLookupCode(parentCode).orElse(null);
         if (parent == null) return List.of();
-        return lookupRepository.findByParentLookupIdAndIsActiveTrueAndIsDeletedFalseOrderBySortedOrder(parent.getLookupid());
+        return lookupRepository.findByParentLookupIdAndIsActiveAndIsDeletedOrderBySortedOrder(parent.getLookupid(), 1, 0);
     }
 
     public List<Lookup> getChildren(Long parentId) {
-        return lookupRepository.findByParentLookupIdAndIsActiveTrueAndIsDeletedFalseOrderBySortedOrder(parentId);
+        return lookupRepository.findByParentLookupIdAndIsActiveAndIsDeletedOrderBySortedOrder(parentId, 1, 0);
     }
 
     public boolean existsByCodeAndParent(String code, String parentCode) {
         var parent = lookupRepository.findByLookupCode(parentCode).orElse(null);
         if (parent == null) return false;
-        return lookupRepository.findByLookupCodeAndParentLookupIdAndIsActiveTrueAndIsDeletedFalse(code, parent.getLookupid()).isPresent();
+        return lookupRepository.findByLookupCodeAndParentLookupIdAndIsActiveAndIsDeleted(code, parent.getLookupid(), 1, 0).isPresent();
     }
 
     public Lookup getByCode(String code) {

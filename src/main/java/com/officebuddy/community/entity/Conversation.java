@@ -1,8 +1,9 @@
 package com.officebuddy.community.entity;
 
+import com.officebuddy.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.experimental.SuperBuilder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,10 +13,10 @@ import java.util.UUID;
 @Entity
 @Table(name = "conversations")
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Conversation {
+public class Conversation extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -32,11 +33,4 @@ public class Conversation {
 
     private LocalDateTime lastMessageAt;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
 }

@@ -9,6 +9,6 @@ import java.util.UUID;
 
 @Repository
 public interface ReminderRepository extends JpaRepository<Reminder, UUID> {
-    List<Reminder> findByUserIdAndIsDeletedFalseOrderByRemindAtAsc(UUID userId);
-    List<Reminder> findByUserIdAndCategoryAndIsDeletedFalseOrderByRemindAtAsc(UUID userId, String category);
+    List<Reminder> findByUserIdAndIsDeletedOrderByRemindAtAsc(UUID userId, Integer isDeleted);
+    List<Reminder> findByUserIdAndCategoryAndIsDeletedOrderByRemindAtAsc(UUID userId, String category, Integer isDeleted);
 }

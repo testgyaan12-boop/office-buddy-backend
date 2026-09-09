@@ -77,16 +77,16 @@ public class ReminderService {
     public List<ReminderResponse> getReminders(UUID userId, String category) {
         List<Reminder> list;
         if (category != null && !category.isEmpty()) {
-            list = reminderRepository.findByUserIdAndCategoryAndIsDeletedFalseOrderByRemindAtAsc(userId, category);
+            list = reminderRepository.findByUserIdAndCategoryAndIsDeletedOrderByRemindAtAsc(userId, category, 0);
         } else {
-            list = reminderRepository.findByUserIdAndIsDeletedFalseOrderByRemindAtAsc(userId);
+            list = reminderRepository.findByUserIdAndIsDeletedOrderByRemindAtAsc(userId, 0);
         }
         return list.stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     public ReminderResponse getReminder(UUID userId, UUID id) {
         var r = reminderRepository.findById(id).orElseThrow(() -> new RuntimeException("Reminder not found"));
-        if (!r.getUserId().equals(userId) || Boolean.TRUE.equals(r.getIsDeleted())) throw new RuntimeException("Not found");
+        if (!r.getUserId().equals(userId) || Integer.valueOf(1).equals(r.getIsDeleted())) throw new RuntimeException("Not found");
         return toResponse(r);
     }
 
@@ -110,9 +110,6 @@ public class ReminderService {
                 .fileName(req.getFileName())
                 .remindAt(remindAt)
                 .notifyBeforeMinutes(req.getNotifyBeforeMinutes() != null ? req.getNotifyBeforeMinutes() : 60)
-                .isDeleted(false)
-                .createdBy(userId)
-                .updatedBy(userId)
                 .build();
         reminderRepository.save(entity);
         // audit history for creation (optional) — log initial schedule
@@ -133,7 +130,7 @@ public class ReminderService {
     @Transactional
     public ReminderResponse updateReminder(UUID userId, UUID id, ReminderRequest req) {
         var r = reminderRepository.findById(id).orElseThrow(() -> new RuntimeException("Reminder not found"));
-        if (!r.getUserId().equals(userId) || Boolean.TRUE.equals(r.getIsDeleted())) throw new RuntimeException("Not found");
+        if (!r.getUserId().equals(userId) || Integer.valueOf(1).equals(r.getIsDeleted())) throw new RuntimeException("Not found");
         if (req.getTitle() != null) r.setTitle(req.getTitle());
         if (req.getDescription() != null) r.setDescription(req.getDescription());
         if (req.getJd() != null) r.setJd(req.getJd());
@@ -147,7 +144,6 @@ public class ReminderService {
         if (req.getFileName() != null) r.setFileName(req.getFileName());
         if (req.getRemindAt() != null) r.setRemindAt(parse(req.getRemindAt()));
         if (req.getNotifyBeforeMinutes() != null) r.setNotifyBeforeMinutes(req.getNotifyBeforeMinutes());
-        r.setUpdatedBy(userId);
         reminderRepository.save(r);
         return toResponse(r);
     }
@@ -156,9 +152,8 @@ public class ReminderService {
     public void deleteReminder(UUID userId, UUID id) {
         var r = reminderRepository.findById(id).orElseThrow(() -> new RuntimeException("Reminder not found"));
         if (!r.getUserId().equals(userId)) throw new RuntimeException("Unauthorized");
-        r.setIsDeleted(true);
+        r.setIsDeleted(1);
         r.setDeletedAt(LocalDateTime.now());
-        r.setUpdatedBy(userId);
         reminderRepository.save(r);
     }
 

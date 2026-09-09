@@ -22,7 +22,7 @@ public class AdProviderServiceImpl implements AdProviderService {
                 .id(e.getId())
                 .providerName(e.getProviderName())
                 .platform(e.getPlatform())
-                .isActive(e.getIsActive())
+                .isActive(e.getIsActive() != null && e.getIsActive() == 1)
                 .priority(e.getPriority())
                 .createdAt(e.getCreatedAt() != null ? e.getCreatedAt().toString() : null)
                 .updatedAt(e.getUpdatedAt() != null ? e.getUpdatedAt().toString() : null)
@@ -34,7 +34,7 @@ public class AdProviderServiceImpl implements AdProviderService {
         var e = AdProvider.builder()
                 .providerName(req.getProviderName())
                 .platform(req.getPlatform())
-                .isActive(req.getIsActive() != null ? req.getIsActive() : true)
+                .isActive(Boolean.TRUE.equals(req.getIsActive()) ? 1 : 0)
                 .priority(req.getPriority())
                 .build();
         return toDto(repo.save(e));
@@ -45,21 +45,21 @@ public class AdProviderServiceImpl implements AdProviderService {
         var e = repo.findById(id).orElseThrow(() -> new RuntimeException("Provider not found"));
         if (req.getProviderName() != null) e.setProviderName(req.getProviderName());
         if (req.getPlatform() != null) e.setPlatform(req.getPlatform());
-        if (req.getIsActive() != null) e.setIsActive(req.getIsActive());
+        if (req.getIsActive() != null) e.setIsActive(Boolean.TRUE.equals(req.getIsActive()) ? 1 : 0);
         if (req.getPriority() != null) e.setPriority(req.getPriority());
         return toDto(repo.save(e));
     }
 
     @Override
     public List<AdProviderDto> list(String platform) {
-        List<AdProvider> list = platform != null ? repo.findByPlatformAndIsActiveTrueOrderByPriorityAsc(platform) : repo.findByIsActiveTrueOrderByPriorityAsc();
+        List<AdProvider> list = platform != null ? repo.findByPlatformAndIsActiveOrderByPriorityAsc(platform, 1) : repo.findByIsActiveOrderByPriorityAsc(1);
         return list.stream().map(this::toDto).collect(Collectors.toList());
     }
 
     @Override
     public void toggleActive(Long id) {
         var e = repo.findById(id).orElseThrow(() -> new RuntimeException("Provider not found"));
-        e.setIsActive(!e.getIsActive());
+        e.setIsActive(e.getIsActive() != null && e.getIsActive() == 1 ? 0 : 1);
         repo.save(e);
     }
 }

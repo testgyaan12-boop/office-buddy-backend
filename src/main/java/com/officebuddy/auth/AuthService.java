@@ -1,5 +1,6 @@
 package com.officebuddy.auth;
 
+import com.officebuddy.adAndSubscription.subscription.service.SubscriptionService;
 import com.officebuddy.auth.dto.*;
 import com.officebuddy.auth.security.JwtService;
 import com.officebuddy.user.User;
@@ -28,6 +29,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
+    private final SubscriptionService subscriptionService;
 
     private static final int OTP_EXPIRY_MINUTES = 15;
 
@@ -50,7 +52,14 @@ public class AuthService {
                 .verificationToken(verificationToken)
                 .build();
 
-        userRepository.save(user);
+        var savedUser = userRepository.save(user);
+        user = savedUser;
+
+        try {
+            subscriptionService.ensureFreeSubscription(user.getId());
+        } catch (Exception e) {
+            log.warn("Failed to create FREE subscription for {}: {}", user.getEmail(), e.getMessage());
+        }
 
         log.info("Verification token for {}: {}", user.getEmail(), verificationToken);
 
@@ -72,6 +81,12 @@ public class AuthService {
         user.setEmailVerified(true);
         user.setVerificationToken(null);
         userRepository.save(user);
+
+        try {
+            subscriptionService.ensureFreeSubscription(user.getId());
+        } catch (Exception e) {
+            log.warn("Failed to ensure FREE subscription for {}: {}", user.getEmail(), e.getMessage());
+        }
 
         return Map.of("message", "Email verified successfully. You can now log in.");
     }

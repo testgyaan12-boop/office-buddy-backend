@@ -27,11 +27,11 @@ public class AdServiceImpl implements AdService {
     @Override
     public AdConfigRes getAdConfig(String platform, String placement, String adType, UUID userId) {
         if (subscriptionService.hasActive(userId)) return null;
-        List<AdProvider> providers = providerRepo.findByPlatformAndIsActiveTrueOrderByPriorityAsc(platform);
+        List<AdProvider> providers = providerRepo.findByPlatformAndIsActiveOrderByPriorityAsc(platform, 1);
         AdConfig primary = null;
         AdConfig fallback = null;
         for (AdProvider p : providers) {
-            var configs = configRepo.findByProviderIdAndPlacementAndAdTypeAndIsActiveTrueOrderByPriorityAsc(p.getId(), placement, adType);
+            var configs = configRepo.findByProviderIdAndPlacementAndAdTypeAndIsActiveOrderByPriorityAsc(p.getId(), placement, adType, 1);
             if (!configs.isEmpty()) {
                 if (primary == null) primary = configs.get(0);
                 else if (fallback == null) { fallback = configs.get(0); break; }
@@ -56,7 +56,7 @@ public class AdServiceImpl implements AdService {
                 .adUnitId(primary.getAdUnitId())
                 .appId(primary.getAppId())
                 .priority(primary.getPriority())
-                .isActive(primary.getIsActive())
+                .isActive(primary.getIsActive() != null && primary.getIsActive() == 1)
                 .fallbackProvider(fallbackProvider)
                 .fallbackAdUnitId(fallbackUnit)
                 .build();

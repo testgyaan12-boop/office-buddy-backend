@@ -12,7 +12,12 @@ import lombok.NoArgsConstructor;
 public class SubscriptionDto {
     private String id;
     private String userId;
+    private String planCode;
     private String planName;
+    private Long storageLimitBytes;
+    private Integer maxCompanies;
+    private Integer maxDocuments;
+    private Boolean adsEnabled;
     private String status;
     private String startDate;
     private String expiryDate;

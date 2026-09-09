@@ -1,8 +1,9 @@
 package com.officebuddy.jobswitch;
 
+import com.officebuddy.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.experimental.SuperBuilder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,10 +13,10 @@ import java.util.UUID;
 @Entity
 @Table(name = "job_switch_packs")
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JobSwitchPack {
+public class JobSwitchPack extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -38,10 +39,6 @@ public class JobSwitchPack {
 
     private LocalDateTime deletedAt;
 
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
     private LocalDateTime generatedAt;
 
     private LocalDateTime expiresAt;
@@ -51,15 +48,8 @@ public class JobSwitchPack {
         LocalDateTime now = LocalDateTime.now();
         generatedAt = now;
         expiresAt = now.plusDays(7);
-        createdAt = now;
-        updatedAt = now;
         if (active == null) active = true;
         if (downloadCount == null) downloadCount = 0;
         if (isPaid == null) isPaid = false;
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
 }

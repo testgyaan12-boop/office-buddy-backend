@@ -1,8 +1,10 @@
 package com.officebuddy.community.entity;
 
+import com.officebuddy.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.experimental.SuperBuilder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,10 +14,10 @@ import java.util.UUID;
 @Entity
 @Table(name = "messages")
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Message {
+public class Message extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -36,13 +38,5 @@ public class Message {
 
     private String fileUrl;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
     private LocalDateTime readAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
 }

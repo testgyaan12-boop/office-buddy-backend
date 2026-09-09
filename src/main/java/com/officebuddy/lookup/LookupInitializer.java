@@ -22,8 +22,6 @@ public class LookupInitializer {
                     .longName("Document Type")
                     .parentLookupId(null)
                     .sortedOrder(1)
-                    .isActive(true)
-                    .isDeleted(false)
                     .remarks("{\"icon\":\"description\",\"color\":\"#FF6C63FF\"}")
                     .build();
             parent = lookupRepository.save(parent);
@@ -31,21 +29,21 @@ public class LookupInitializer {
 
         List<Lookup> toAdd = new java.util.ArrayList<>();
         if (lookupRepository.findByLookupCode("OFFER_LETTER").isEmpty())
-            toAdd.add(Lookup.builder().lookupCode("OFFER_LETTER").shortName("Offer Letter").longName("Offer Letter").parentLookupId(parent.getLookupid()).sortedOrder(1).isActive(true).isDeleted(false).remarks("{\"icon\":\"card_membership\",\"color\":\"#FF00B894\",\"eventType\":\"OFFER_RECEIVED\",\"title\":\"Received offer from \"}").build());
+            toAdd.add(Lookup.builder().lookupCode("OFFER_LETTER").shortName("Offer Letter").longName("Offer Letter").parentLookupId(parent.getLookupid()).sortedOrder(1).remarks("{\"icon\":\"card_membership\",\"color\":\"#FF00B894\",\"eventType\":\"OFFER_RECEIVED\",\"title\":\"Received offer from \"}").build());
         if (lookupRepository.findByLookupCode("JOINING_LETTER").isEmpty())
-            toAdd.add(Lookup.builder().lookupCode("JOINING_LETTER").shortName("Joining Letter").longName("Joining Letter").parentLookupId(parent.getLookupid()).sortedOrder(2).isActive(true).isDeleted(false).remarks("{\"icon\":\"how_to_reg\",\"color\":\"#FF00ACC1\",\"eventType\":\"COMPANY_JOINED\",\"title\":\"Joined \"}").build());
+            toAdd.add(Lookup.builder().lookupCode("JOINING_LETTER").shortName("Joining Letter").longName("Joining Letter").parentLookupId(parent.getLookupid()).sortedOrder(2).remarks("{\"icon\":\"how_to_reg\",\"color\":\"#FF00ACC1\",\"eventType\":\"COMPANY_JOINED\",\"title\":\"Joined \"}").build());
         if (lookupRepository.findByLookupCode("INCREMENT_LETTER").isEmpty())
-            toAdd.add(Lookup.builder().lookupCode("INCREMENT_LETTER").shortName("Increment Letter").longName("Increment Letter").parentLookupId(parent.getLookupid()).sortedOrder(3).isActive(true).isDeleted(false).remarks("{\"icon\":\"trending_up\",\"color\":\"#FF6C63FF\",\"eventType\":\"INCREMENT\",\"title\":\"Increment at \"}").build());
+            toAdd.add(Lookup.builder().lookupCode("INCREMENT_LETTER").shortName("Increment Letter").longName("Increment Letter").parentLookupId(parent.getLookupid()).sortedOrder(3).remarks("{\"icon\":\"trending_up\",\"color\":\"#FF6C63FF\",\"eventType\":\"INCREMENT\",\"title\":\"Increment at \"}").build());
         if (lookupRepository.findByLookupCode("PAYSLIP").isEmpty())
-            toAdd.add(Lookup.builder().lookupCode("PAYSLIP").shortName("Payslip").longName("Payslip").parentLookupId(parent.getLookupid()).sortedOrder(4).isActive(true).isDeleted(false).remarks("{\"icon\":\"receipt_long\",\"color\":\"#FFFDCB6E\",\"eventType\":\"PAYSLIP\",\"title\":\"Salary record at \"}").build());
+            toAdd.add(Lookup.builder().lookupCode("PAYSLIP").shortName("Payslip").longName("Payslip").parentLookupId(parent.getLookupid()).sortedOrder(4).remarks("{\"icon\":\"receipt_long\",\"color\":\"#FFFDCB6E\",\"eventType\":\"PAYSLIP\",\"title\":\"Salary record at \"}").build());
         if (lookupRepository.findByLookupCode("CERTIFICATE").isEmpty())
-            toAdd.add(Lookup.builder().lookupCode("CERTIFICATE").shortName("Certificate").longName("Certificate").parentLookupId(parent.getLookupid()).sortedOrder(5).isActive(true).isDeleted(false).remarks("{\"icon\":\"verified\",\"color\":\"#FFFF6584\",\"eventType\":\"CERTIFICATE\",\"title\":\"Certificate from \"}").build());
+            toAdd.add(Lookup.builder().lookupCode("CERTIFICATE").shortName("Certificate").longName("Certificate").parentLookupId(parent.getLookupid()).sortedOrder(5).remarks("{\"icon\":\"verified\",\"color\":\"#FFFF6584\",\"eventType\":\"CERTIFICATE\",\"title\":\"Certificate from \"}").build());
         if (lookupRepository.findByLookupCode("RELIEVING_LETTER").isEmpty())
-            toAdd.add(Lookup.builder().lookupCode("RELIEVING_LETTER").shortName("Relieving Letter").longName("Relieving Letter").parentLookupId(parent.getLookupid()).sortedOrder(6).isActive(true).isDeleted(false).remarks("{\"icon\":\"exit_to_app\",\"color\":\"#FFE17055\",\"eventType\":\"RELIEVED\",\"title\":\"Relieved from \"}").build());
+            toAdd.add(Lookup.builder().lookupCode("RELIEVING_LETTER").shortName("Relieving Letter").longName("Relieving Letter").parentLookupId(parent.getLookupid()).sortedOrder(6).remarks("{\"icon\":\"exit_to_app\",\"color\":\"#FFE17055\",\"eventType\":\"RELIEVED\",\"title\":\"Relieved from \"}").build());
         if (lookupRepository.findByLookupCode("TDS_CERTIFICATE").isEmpty())
-            toAdd.add(Lookup.builder().lookupCode("TDS_CERTIFICATE").shortName("TDS Certificate").longName("TDS Certificate").parentLookupId(parent.getLookupid()).sortedOrder(7).isActive(true).isDeleted(false).remarks("{\"icon\":\"receipt\",\"color\":\"#FF7C4DFF\",\"eventType\":\"CERTIFICATE\",\"title\":\"TDS Certificate from \"}").build());
+            toAdd.add(Lookup.builder().lookupCode("TDS_CERTIFICATE").shortName("TDS Certificate").longName("TDS Certificate").parentLookupId(parent.getLookupid()).sortedOrder(7).remarks("{\"icon\":\"receipt\",\"color\":\"#FF7C4DFF\",\"eventType\":\"CERTIFICATE\",\"title\":\"TDS Certificate from \"}").build());
         if (lookupRepository.findByLookupCode("CONFIRMATION_LETTER").isEmpty())
-            toAdd.add(Lookup.builder().lookupCode("CONFIRMATION_LETTER").shortName("Confirmation Letter").longName("Confirmation Letter").parentLookupId(parent.getLookupid()).sortedOrder(8).isActive(true).isDeleted(false).remarks("{\"icon\":\"task_alt\",\"color\":\"#FF26A69A\",\"eventType\":\"CONFIRMED\",\"title\":\"Confirmation at \"}").build());
+            toAdd.add(Lookup.builder().lookupCode("CONFIRMATION_LETTER").shortName("Confirmation Letter").longName("Confirmation Letter").parentLookupId(parent.getLookupid()).sortedOrder(8).remarks("{\"icon\":\"task_alt\",\"color\":\"#FF26A69A\",\"eventType\":\"CONFIRMED\",\"title\":\"Confirmation at \"}").build());
         if (!toAdd.isEmpty()) lookupRepository.saveAll(toAdd);
 
         // Update existing lookups to ensure eventType/title are present (for DBs created before this fix)

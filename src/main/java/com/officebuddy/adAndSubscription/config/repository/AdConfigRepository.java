@@ -8,6 +8,6 @@ import java.util.List;
 
 @Repository
 public interface AdConfigRepository extends JpaRepository<AdConfig, Long> {
-    List<AdConfig> findByProviderIdAndPlacementAndAdTypeAndIsActiveTrueOrderByPriorityAsc(Long providerId, String placement, String adType);
-    List<AdConfig> findByPlacementAndAdTypeAndIsActiveTrueOrderByPriorityAsc(String placement, String adType);
+    List<AdConfig> findByProviderIdAndPlacementAndAdTypeAndIsActiveOrderByPriorityAsc(Long providerId, String placement, String adType, Integer isActive);
+    List<AdConfig> findByPlacementAndAdTypeAndIsActiveOrderByPriorityAsc(String placement, String adType, Integer isActive);
 }

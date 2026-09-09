@@ -1,8 +1,9 @@
 package com.officebuddy.jobswitch;
 
+import com.officebuddy.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.experimental.SuperBuilder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,10 +13,10 @@ import java.util.UUID;
 @Entity
 @Table(name = "job_switch_pack_download_details")
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JobSwitchPackDownloadDetails {
+public class JobSwitchPackDownloadDetails extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -34,10 +35,6 @@ public class JobSwitchPackDownloadDetails {
 
     private LocalDateTime deletedAt;
 
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
     private LocalDateTime downloadedAt;
 
     private String ipAddress;
@@ -49,16 +46,8 @@ public class JobSwitchPackDownloadDetails {
 
     @PrePersist
     protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
-        createdAt = now;
-        updatedAt = now;
-        downloadedAt = now;
+        downloadedAt = LocalDateTime.now();
         if (active == null) active = true;
         if (downloadCount == null) downloadCount = 1;
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
 }

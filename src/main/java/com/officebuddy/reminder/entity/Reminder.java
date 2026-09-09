@@ -1,8 +1,9 @@
 package com.officebuddy.reminder.entity;
 
+import com.officebuddy.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.experimental.SuperBuilder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,10 +13,10 @@ import java.util.UUID;
 @Entity
 @Table(name = "reminders")
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Reminder {
+public class Reminder extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -57,37 +58,6 @@ public class Reminder {
     @Column(name = "notify_before_minutes", nullable = false)
     private Integer notifyBeforeMinutes;
 
-    @Column(name = "is_deleted")
-    @Builder.Default
-    private Boolean isDeleted = false;
-
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "created_by")
-    private UUID createdBy;
-
-    @Column(name = "updated_by")
-    private UUID updatedBy;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-        if (isDeleted == null) isDeleted = false;
-        if (createdBy == null) createdBy = userId;
-        updatedBy = userId;
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-        updatedBy = userId;
-    }
 }

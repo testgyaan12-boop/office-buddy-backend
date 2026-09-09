@@ -305,7 +305,12 @@ CREATE INDEX IF NOT EXISTS idx_ad_config_placement ON ad_config(placement, ad_ty
 CREATE TABLE IF NOT EXISTS subscriptions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    plan_name VARCHAR(50) NOT NULL,
+    plan_code VARCHAR(50) NOT NULL DEFAULT 'FREE',
+    plan_name VARCHAR(100) NOT NULL DEFAULT 'Free',
+    storage_limit_bytes BIGINT NOT NULL DEFAULT 209715200,
+    max_companies INTEGER,
+    max_documents INTEGER,
+    ads_enabled BOOLEAN DEFAULT TRUE,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     razorpay_order_id VARCHAR(100),
     razorpay_payment_id VARCHAR(100),
@@ -315,7 +320,173 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS plan_code VARCHAR(50) DEFAULT 'FREE';
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS storage_limit_bytes BIGINT NOT NULL DEFAULT 209715200;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS max_companies INTEGER;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS max_documents INTEGER;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS ads_enabled BOOLEAN DEFAULT TRUE;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'subscriptions_plan_code_key') THEN
+    ALTER TABLE subscriptions DROP CONSTRAINT subscriptions_plan_code_key;
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id) WHERE status = 'ACTIVE';
+
+CREATE TABLE IF NOT EXISTS plans (
+    id BIGSERIAL PRIMARY KEY,
+    plan_name VARCHAR(100) NOT NULL,
+    plan_code VARCHAR(50) NOT NULL UNIQUE,
+    period VARCHAR(20),
+    is_active INTEGER NOT NULL DEFAULT 1,
+    remarks VARCHAR(255),
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    created_by BIGINT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_by BIGINT,
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Phase-2 BaseEntity rollout: shared audit columns on every table (additive only).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE goals ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE goals ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE goals ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE goals ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE goals ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE todos ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE todos ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE todos ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE todos ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE todos ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+ALTER TABLE timeline_events ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE timeline_events ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE timeline_events ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE timeline_events ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE timeline_events ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE user_storage ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE user_storage ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE user_storage ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE user_storage ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE user_storage ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE job_switch_packs ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE job_switch_packs ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE job_switch_packs ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE job_switch_packs ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE job_switch_packs ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE job_switch_pack_download_details ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE job_switch_pack_download_details ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE job_switch_pack_download_details ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE job_switch_pack_download_details ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE job_switch_pack_download_details ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+ALTER TABLE friend_requests ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE friend_requests ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE friend_requests ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE friend_requests ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE friend_requests ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE reminder_history ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE reminder_history ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE reminder_history ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE reminder_history ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE reminder_history ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE reminder_history ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+ALTER TABLE ad_request_log ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE ad_request_log ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE ad_request_log ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE ad_request_log ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE ad_request_log ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE ad_request_log ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+ALTER TABLE ad_config ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE ad_config ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE ad_config ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE ad_config ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE ad_provider_master ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+ALTER TABLE ad_provider_master ADD COLUMN IF NOT EXISTS is_deleted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE ad_provider_master ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE ad_provider_master ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE lookups ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE lookups ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+ALTER TABLE reminders ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE reminders ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);
+-- Boolean -> Integer flag conversions (existing data preserved as 1/0).
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='ad_config' AND column_name='is_active' AND data_type='boolean') THEN
+    ALTER TABLE ad_config ALTER COLUMN is_active TYPE INTEGER USING (CASE WHEN is_active THEN 1 ELSE 0 END);
+    ALTER TABLE ad_config ALTER COLUMN is_active SET DEFAULT 1;
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='ad_provider_master' AND column_name='is_active' AND data_type='boolean') THEN
+    ALTER TABLE ad_provider_master ALTER COLUMN is_active TYPE INTEGER USING (CASE WHEN is_active THEN 1 ELSE 0 END);
+    ALTER TABLE ad_provider_master ALTER COLUMN is_active SET DEFAULT 1;
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='lookups' AND column_name='is_active' AND data_type='boolean') THEN
+    ALTER TABLE lookups ALTER COLUMN is_active TYPE INTEGER USING (CASE WHEN is_active THEN 1 ELSE 0 END);
+    ALTER TABLE lookups ALTER COLUMN is_active SET DEFAULT 1;
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='lookups' AND column_name='is_deleted' AND data_type='boolean') THEN
+    ALTER TABLE lookups ALTER COLUMN is_deleted TYPE INTEGER USING (CASE WHEN is_deleted THEN 1 ELSE 0 END);
+    ALTER TABLE lookups ALTER COLUMN is_deleted SET DEFAULT 0;
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='reminders' AND column_name='is_deleted' AND data_type='boolean') THEN
+    ALTER TABLE reminders ALTER COLUMN is_deleted TYPE INTEGER USING (CASE WHEN is_deleted THEN 1 ELSE 0 END);
+    ALTER TABLE reminders ALTER COLUMN is_deleted SET DEFAULT 0;
+  END IF;
+END $$;
+-- reminders.created_by/updated_by were UUID (user ids never fit BIGINT): recreate as BIGINT audit columns.
+ALTER TABLE reminders DROP COLUMN IF EXISTS created_by;
+ALTER TABLE reminders DROP COLUMN IF EXISTS updated_by;
+ALTER TABLE reminders ADD COLUMN IF NOT EXISTS created_by BIGINT;
+ALTER TABLE reminders ADD COLUMN IF NOT EXISTS updated_by BIGINT;
+
+CREATE TABLE IF NOT EXISTS user_storage (
+    id BIGSERIAL PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+    allocated_bytes BIGINT NOT NULL DEFAULT 209715200,
+    used_bytes BIGINT NOT NULL DEFAULT 0,
+    last_calculated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_user_storage_user_id ON user_storage(user_id);
 
 CREATE TABLE IF NOT EXISTS user_ad_preference (
     id BIGSERIAL PRIMARY KEY,

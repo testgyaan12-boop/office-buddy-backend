@@ -169,7 +169,7 @@ public class JobSwitchService {
 
         // Increment pack downloadCount
         pack.setDownloadCount((pack.getDownloadCount() == null ? 0 : pack.getDownloadCount()) + 1);
-        pack.setUpdatedAt(LocalDateTime.now());
+        pack.setUpdatedAt(new java.util.Date());
         jobSwitchRepository.save(pack);
 
         return JobSwitchPackDto.builder()
@@ -196,7 +196,7 @@ public class JobSwitchService {
         if (!d.getUserId().equals(userId)) throw new RuntimeException("Access denied");
         d.setActive(false);
         d.setDeletedAt(LocalDateTime.now());
-        d.setUpdatedAt(LocalDateTime.now());
+        d.setUpdatedAt(new java.util.Date());
         downloadDetailsRepository.save(d);
     }
 
