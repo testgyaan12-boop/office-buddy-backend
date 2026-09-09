@@ -26,9 +26,17 @@ public class Plan extends BaseEntity {
     @Column(name = "period")
     private String period;
 
-    public Plan(String planName, String planCode, String period) {
+    @Column(name = "allocated_bytes", nullable = false)
+    private Long allocatedBytes;
+
+    @Column(name = "allocated_unit", nullable = false)
+    private String allocatedUnit;
+
+    public Plan(String planName, String planCode, String period, Long allocatedBytes, String allocatedUnit) {
         this.planName = planName;
         this.planCode = planCode;
         this.period = period;
+        this.allocatedBytes = allocatedBytes;
+        this.allocatedUnit = allocatedUnit;
     }
 }

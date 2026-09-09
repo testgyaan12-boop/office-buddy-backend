@@ -1,5 +1,7 @@
 package com.officebuddy.storage.quota.service;
 
+import com.officebuddy.adAndSubscription.subscription.plan.entity.Plan;
+import com.officebuddy.adAndSubscription.subscription.plan.repository.PlanRepository;
 import com.officebuddy.document.DocumentRepository;
 import com.officebuddy.storage.quota.dto.StorageQuotaDto;
 import com.officebuddy.storage.quota.entity.UserStorage;
@@ -18,6 +20,7 @@ public class StorageQuotaService {
     private final UserStorageRepository storageRepo;
     private final DocumentRepository documentRepo;
     private final SubscriptionRepository subscriptionRepo;
+    private final PlanRepository planRepo;
 
     private long limitForPlan(String planCode) {
         if (planCode == null) return 209715200L;
@@ -28,28 +31,67 @@ public class StorageQuotaService {
         }
     }
 
+    private Plan resolvePlan(String planCode) {
+        try {
+            return planRepo.findByPlanCode(planCode).orElse(null);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
     @Transactional
     public StorageQuotaDto getOrCreate(UUID userId) {
-        var sub = subscriptionRepo.findTopByUserIdAndStatusOrderByExpiryDateDesc(userId, "ACTIVE").orElse(null);
-        String planCode = sub != null ? sub.getPlanCode() : "FREE";
-        String planName = sub != null ? sub.getPlanName() : "Free";
-        long limit = sub != null && sub.getStorageLimitBytes() != null ? sub.getStorageLimitBytes() : limitForPlan(planCode);
-
         var storage = storageRepo.findByUserId(userId).orElse(null);
+
+        // 1. plan linked on user_storage wins
+        Plan plan = null;
+        if (storage != null && storage.getPlanId() != null) {
+            try {
+                plan = planRepo.findById(storage.getPlanId()).orElse(null);
+            } catch (Exception ignored) {}
+        }
+        // 2. else resolve from ACTIVE subscription
+        String planCode = "FREE";
+        String planName = "Free";
+        if (plan == null) {
+            var sub = subscriptionRepo.findTopByUserIdAndStatusOrderByExpiryDateDesc(userId, "ACTIVE").orElse(null);
+            if (sub != null) {
+                planCode = sub.getPlanCode() != null ? sub.getPlanCode() : "FREE";
+                planName = sub.getPlanName() != null ? sub.getPlanName() : "Free";
+            }
+            plan = resolvePlan(planCode);
+        }
+        // 3. plan row from DB drives quota
+        long limit;
+        if (plan != null) {
+            planCode = plan.getPlanCode();
+            planName = plan.getPlanName();
+            limit = plan.getAllocatedBytes() != null ? plan.getAllocatedBytes() : limitForPlan(planCode);
+        } else {
+            limit = limitForPlan(planCode);
+        }
+
         if (storage == null) {
             long used = documentRepo.sumUsedBytes(userId);
             storage = UserStorage.builder()
                     .userId(userId)
+                    .planId(plan != null ? plan.getId() : null)
                     .allocatedBytes(limit)
                     .usedBytes(used)
                     .build();
             storage = storageRepo.save(storage);
         } else {
-            // sync limit if plan changed
+            // sync plan link + limit if plan changed
+            boolean dirty = false;
+            if (plan != null && !plan.getId().equals(storage.getPlanId())) {
+                storage.setPlanId(plan.getId());
+                dirty = true;
+            }
             if (!storage.getAllocatedBytes().equals(limit)) {
                 storage.setAllocatedBytes(limit);
-                storage = storageRepo.save(storage);
+                dirty = true;
             }
+            if (dirty) storage = storageRepo.save(storage);
         }
         // recalculate used
         long used = documentRepo.sumUsedBytes(userId);

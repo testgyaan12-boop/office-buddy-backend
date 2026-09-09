@@ -337,6 +337,8 @@ CREATE TABLE IF NOT EXISTS plans (
     plan_name VARCHAR(100) NOT NULL,
     plan_code VARCHAR(50) NOT NULL UNIQUE,
     period VARCHAR(20),
+    allocated_bytes BIGINT NOT NULL DEFAULT 209715200,
+    allocated_unit VARCHAR(10) NOT NULL DEFAULT 'MB',
     is_active INTEGER NOT NULL DEFAULT 1,
     remarks VARCHAR(255),
     is_deleted INTEGER NOT NULL DEFAULT 0,
@@ -345,6 +347,10 @@ CREATE TABLE IF NOT EXISTS plans (
     updated_by BIGINT,
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+ALTER TABLE plans ADD COLUMN IF NOT EXISTS allocated_bytes BIGINT NOT NULL DEFAULT 209715200;
+ALTER TABLE plans ADD COLUMN IF NOT EXISTS allocated_unit VARCHAR(10) NOT NULL DEFAULT 'MB';
+
+ALTER TABLE user_storage ADD COLUMN IF NOT EXISTS plan_id BIGINT REFERENCES plans(id);
 
 -- Phase-2 BaseEntity rollout: shared audit columns on every table (additive only).
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;

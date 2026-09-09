@@ -2,6 +2,7 @@ package com.officebuddy.adAndSubscription.subscription.service.impl;
 
 import com.officebuddy.adAndSubscription.subscription.dto.SubscriptionDto;
 import com.officebuddy.adAndSubscription.subscription.entity.Subscription;
+import com.officebuddy.adAndSubscription.subscription.plan.repository.PlanRepository;
 import com.officebuddy.adAndSubscription.subscription.repository.SubscriptionRepository;
 import com.officebuddy.adAndSubscription.subscription.service.RazorPayService;
 import com.officebuddy.adAndSubscription.subscription.service.SubscriptionService;
@@ -21,11 +22,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final SubscriptionRepository repo;
     private final RazorPayService razorPayService;
     private final StorageQuotaService quotaService;
+    private final PlanRepository planRepo;
 
     @Value("${razorpay.key-id:}")
     private String keyId;
 
     private long limitFor(String code) {
+        try {
+            var plan = planRepo.findByPlanCode(code).orElse(null);
+            if (plan != null && plan.getAllocatedBytes() != null) return plan.getAllocatedBytes();
+        } catch (Exception ignored) {}
         if ("PRO_YEARLY".equals(code)) return 10737418240L;
         if ("PRO_MONTHLY".equals(code)) return 5368709120L;
         return 209715200L;

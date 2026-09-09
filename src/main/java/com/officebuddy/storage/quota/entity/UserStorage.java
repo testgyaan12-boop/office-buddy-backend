@@ -26,6 +26,9 @@ public class UserStorage extends BaseEntity {
     @Column(name = "user_id", nullable = false, unique = true)
     private UUID userId;
 
+    @Column(name = "plan_id")
+    private Long planId;
+
     @Column(name = "allocated_bytes", nullable = false)
     private Long allocatedBytes;
 
