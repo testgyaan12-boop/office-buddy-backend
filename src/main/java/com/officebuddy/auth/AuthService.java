@@ -64,11 +64,10 @@ public class AuthService {
         log.info("Verification token for {}: {}", user.getEmail(), verificationToken);
 
         try {
-            emailService.sendVerificationEmail(user.getEmail(), user.getName(), verificationToken);
+            String emailResponse = emailService.sendVerificationEmail(user.getEmail(), user.getName(), verificationToken);
+            log.info("Verification email response for {}: {}", user.getEmail(), emailResponse);
         } catch (Exception e) {
-            log.error("Failed to send verification email to {}: {}", user.getEmail(), e.getMessage());
-            userRepository.delete(user);
-            throw new RuntimeException("Failed to send verification email. Please try again.");
+            log.warn("Verification email failed for {}: {}", user.getEmail(), e.getMessage());
         }
 
         return Map.of("message", "Registration successful. Please check your email to verify your account.");
@@ -106,7 +105,8 @@ public class AuthService {
         log.info("Resent verification token for {}: {}", user.getEmail(), newToken);
 
         try {
-            emailService.sendVerificationEmail(user.getEmail(), user.getName(), newToken);
+           String emailRes = emailService.sendVerificationEmail(user.getEmail(), user.getName(), newToken);
+            log.error("resend verification email to {}: {}", user.getEmail(), emailRes);
         } catch (Exception e) {
             log.error("Failed to resend verification email to {}: {}", user.getEmail(), e.getMessage());
             throw new RuntimeException("Failed to send verification email. Please try again.");
@@ -129,6 +129,14 @@ public class AuthService {
 
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (Integer.valueOf(1).equals(user.getIsDeleted())) {
+            throw new RuntimeException("Your account has been deleted. Please contact support.");
+        }
+
+        if (user.getIsActive() == null || user.getIsActive() != 1) {
+            throw new RuntimeException("Your account is inactive. Please contact support.");
+        }
 
         if (!user.isEmailVerified()) {
             throw new RuntimeException("Please verify your email before logging in");
@@ -193,6 +201,14 @@ public class AuthService {
 
         if (!jwtService.isTokenValid(refreshToken, user)) {
             throw new RuntimeException("Invalid refresh token");
+        }
+
+        if (Integer.valueOf(1).equals(user.getIsDeleted())) {
+            throw new RuntimeException("Your account has been deleted. Please contact support.");
+        }
+
+        if (user.getIsActive() == null || user.getIsActive() != 1) {
+            throw new RuntimeException("Your account is inactive. Please contact support.");
         }
 
         var newAccessToken = jwtService.generateToken(user);

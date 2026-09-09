@@ -17,16 +17,19 @@ public class EmailService {
     private final RestTemplate restTemplate;
     private final String resendApiKey;
     private final String fromAddress;
+    private final String verifyBaseUrl;
 
     public EmailService(RestTemplate restTemplate,
                         @Value("${app.email.resend-api-key:}") String resendApiKey,
-                        @Value("${app.email.from-address:OfficeBuddy <noreply@packsyourbags.in>}") String fromAddress) {
+                        @Value("${app.email.from-address:OfficeBuddy <noreply@packsyourbags.in>}") String fromAddress,
+                        @Value("${app.frontend.base-url:https://officebuddy.app}") String verifyBaseUrl) {
         this.restTemplate = restTemplate;
         this.resendApiKey = resendApiKey;
         this.fromAddress = fromAddress;
+        this.verifyBaseUrl = verifyBaseUrl;
     }
 
-    public void sendVerificationEmail(String to, String name, String token) {
+    public String sendVerificationEmail(String to, String name, String token) {
         String subject = "Verify your OfficeBuddy account";
         String html = """
             <html>
@@ -39,7 +42,7 @@ public class EmailService {
                     <p style="color: #666; line-height: 1.6;">Hi %s,</p>
                     <p style="color: #666; line-height: 1.6;">Thanks for signing up! Please verify your email address by clicking the button below:</p>
                     <div style="text-align: center; margin: 28px 0;">
-                        <a href="https://officebuddy.app/verify-email?token=%s"
+                        <a href="%s/verify-email?token=%s"
                            style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #7C3AED, #3B82F6); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
                             Verify Email
                         </a>
@@ -50,12 +53,12 @@ public class EmailService {
                 </div>
             </body>
             </html>
-            """.formatted(name, token, token);
+            """.formatted(name, verifyBaseUrl, token, token);
 
-        sendEmail(to, subject, html);
+        return sendEmail(to, subject, html);
     }
 
-    public void sendResetOtp(String to, String name, String otp) {
+    public String sendResetOtp(String to, String name, String otp) {
         String subject = "Reset your OfficeBuddy password";
         String html = """
             <html>
@@ -77,10 +80,10 @@ public class EmailService {
             </html>
             """.formatted(name, otp);
 
-        sendEmail(to, subject, html);
+        return sendEmail(to, subject, html);
     }
 
-    private void sendEmail(String to, String subject, String html) {
+    private String sendEmail(String to, String subject, String html) {
         var headers = new HttpHeaders();
         headers.setBearerAuth(resendApiKey);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -93,6 +96,7 @@ public class EmailService {
         );
 
         var request = new HttpEntity<>(body, headers);
-        restTemplate.postForEntity(RESEND_API_URL, request, String.class);
+        var response = restTemplate.postForEntity(RESEND_API_URL, request, String.class);
+        return response.getBody();
     }
 }
