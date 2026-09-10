@@ -26,17 +26,25 @@ public class Plan extends BaseEntity {
     @Column(name = "period")
     private String period;
 
-    @Column(name = "allocated_bytes", nullable = false)
+    @Column(name = "allocated_bytes")
     private Long allocatedBytes;
 
-    @Column(name = "allocated_unit", nullable = false)
+    @Column(name = "allocated_unit")
     private String allocatedUnit;
 
-    public Plan(String planName, String planCode, String period, Long allocatedBytes, String allocatedUnit) {
+    @Column(name = "amount_paise")
+    private Long amountPaise;
+
+    @Column(name = "currency")
+    private String currency;
+
+    public Plan(String planName, String planCode, String period, Long allocatedBytes, String allocatedUnit, Long amountPaise, String currency) {
         this.planName = planName;
         this.planCode = planCode;
         this.period = period;
         this.allocatedBytes = allocatedBytes;
         this.allocatedUnit = allocatedUnit;
+        this.amountPaise = amountPaise;
+        this.currency = currency;
     }
 }

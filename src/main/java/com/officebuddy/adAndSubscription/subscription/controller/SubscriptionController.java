@@ -28,8 +28,10 @@ public class SubscriptionController {
     @PostMapping("/create-order")
     public ResponseEntity<SubscriptionDto> createOrder(Authentication auth, @RequestBody Map<String, String> body) {
         var user = (User) auth.getPrincipal();
-        String plan = body.getOrDefault("planName", "PRO_MONTHLY");
-        return ResponseEntity.ok(service.createOrder(user.getId(), plan));
+        return ResponseEntity.ok(service.createOrder(
+                user.getId(),
+                body.get("planCode"),
+                body.getOrDefault("planName", "PRO_MONTHLY")));
     }
 
     @PostMapping("/verify")
@@ -40,6 +42,7 @@ public class SubscriptionController {
                 body.get("razorpay_order_id"),
                 body.get("razorpay_payment_id"),
                 body.get("razorpay_signature"),
+                body.get("planCode"),
                 body.getOrDefault("planName", "PRO_MONTHLY")));
     }
 }

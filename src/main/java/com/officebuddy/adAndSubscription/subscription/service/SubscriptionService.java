@@ -7,6 +7,6 @@ public interface SubscriptionService {
     boolean hasActive(UUID userId);
     SubscriptionDto getCurrent(UUID userId);
     SubscriptionDto ensureFreeSubscription(UUID userId);
-    SubscriptionDto createOrder(UUID userId, String planName);
-    SubscriptionDto verifyAndActivate(UUID userId, String orderId, String paymentId, String signature, String planName);
+    SubscriptionDto createOrder(UUID userId, String planCode, String planName);
+    SubscriptionDto verifyAndActivate(UUID userId, String orderId, String paymentId, String signature, String planCode, String planName);
 }
