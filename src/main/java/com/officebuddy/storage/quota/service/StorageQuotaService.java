@@ -43,23 +43,20 @@ public class StorageQuotaService {
     public StorageQuotaDto getOrCreate(UUID userId) {
         var storage = storageRepo.findByUserId(userId).orElse(null);
 
-        // 1. plan linked on user_storage wins
-        Plan plan = null;
-        if (storage != null && storage.getPlanId() != null) {
+        // 1. ACTIVE (and unexpired) subscription wins — it reflects the latest purchase
+        String planCode = "FREE";
+        String planName = "Free";
+        var sub = subscriptionRepo.findTopByUserIdAndStatusOrderByExpiryDateDesc(userId, "ACTIVE").orElse(null);
+        if (sub != null && sub.isSubscriptionActive()) {
+            planCode = sub.getPlanCode() != null ? sub.getPlanCode() : "FREE";
+            planName = sub.getPlanName() != null ? sub.getPlanName() : "Free";
+        }
+        Plan plan = resolvePlan(planCode);
+        // 2. fallback to the plan already linked on user_storage
+        if (plan == null && storage != null && storage.getPlanId() != null) {
             try {
                 plan = planRepo.findById(storage.getPlanId()).orElse(null);
             } catch (Exception ignored) {}
-        }
-        // 2. else resolve from ACTIVE subscription
-        String planCode = "FREE";
-        String planName = "Free";
-        if (plan == null) {
-            var sub = subscriptionRepo.findTopByUserIdAndStatusOrderByExpiryDateDesc(userId, "ACTIVE").orElse(null);
-            if (sub != null) {
-                planCode = sub.getPlanCode() != null ? sub.getPlanCode() : "FREE";
-                planName = sub.getPlanName() != null ? sub.getPlanName() : "Free";
-            }
-            plan = resolvePlan(planCode);
         }
         // 3. plan row from DB drives quota
         long limit;

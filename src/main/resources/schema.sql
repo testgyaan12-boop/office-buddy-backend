@@ -385,6 +385,20 @@ CREATE TABLE IF NOT EXISTS invoices (
 );
 CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON invoices(user_id);
 
+CREATE TABLE IF NOT EXISTS payment_config (
+    id BIGSERIAL PRIMARY KEY,
+    provider VARCHAR(50) NOT NULL UNIQUE,
+    key_id VARCHAR(255),
+    secret_key VARCHAR(255),
+    is_active INTEGER NOT NULL DEFAULT 1,
+    remarks VARCHAR(255),
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    created_by BIGINT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_by BIGINT,
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 -- Phase-2 BaseEntity rollout: shared audit columns on every table (additive only).
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS remarks VARCHAR(255);

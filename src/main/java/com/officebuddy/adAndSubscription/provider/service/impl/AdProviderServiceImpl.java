@@ -34,9 +34,9 @@ public class AdProviderServiceImpl implements AdProviderService {
         var e = AdProvider.builder()
                 .providerName(req.getProviderName())
                 .platform(req.getPlatform())
-                .isActive(Boolean.TRUE.equals(req.getIsActive()) ? 1 : 0)
                 .priority(req.getPriority())
                 .build();
+        e.setIsActive(Boolean.TRUE.equals(req.getIsActive()) ? 1 : 0);
         return toDto(repo.save(e));
     }
 

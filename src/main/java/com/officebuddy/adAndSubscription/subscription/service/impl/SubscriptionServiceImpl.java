@@ -2,6 +2,7 @@ package com.officebuddy.adAndSubscription.subscription.service.impl;
 
 import com.officebuddy.adAndSubscription.invoice.InvoiceService;
 import com.officebuddy.adAndSubscription.subscription.dto.SubscriptionDto;
+import com.officebuddy.payment.PaymentConfigService;
 import com.officebuddy.adAndSubscription.subscription.entity.Subscription;
 import com.officebuddy.adAndSubscription.subscription.plan.repository.PlanRepository;
 import com.officebuddy.adAndSubscription.subscription.repository.SubscriptionRepository;
@@ -27,12 +28,27 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final PlanRepository planRepo;
     private final InvoiceService invoiceService;
     private final UserRepository userRepository;
+    private final PaymentConfigService paymentConfigService;
 
     @Value("${razorpay.key-id:}")
     private String keyId;
 
     private String effectiveKeyId() {
+        try {
+            var cfg = paymentConfigService.usableProvider("razorpay").orElse(null);
+            if (cfg != null) return cfg.getKeyId();
+        } catch (Exception ignored) {}
         return (keyId == null || keyId.isBlank()) ? "rzp_test_dummy" : keyId;
+    }
+
+    private String activePaymentProvider() {
+        try {
+            return paymentConfigService.activeProvider()
+                    .map(c -> c.getProvider())
+                    .orElse("razorpay");
+        } catch (Exception ignored) {
+            return "razorpay";
+        }
     }
 
     private long limitFor(String code) {
@@ -105,6 +121,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .amountPaise(amountFor(s.getPlanCode()))
                 .currency(currencyFor(s.getPlanCode()))
                 .razorpayKeyId(effectiveKeyId())
+                .paymentProvider(activePaymentProvider())
                 .build();
     }
 
@@ -146,6 +163,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Override
     public SubscriptionDto createOrder(UUID userId, String planCode, String planName) {
         String code = resolvePlanCode(planCode, planName);
+        var plan = planRepo.findByPlanCode(code).orElse(null);
+        if (plan == null || !Integer.valueOf(1).equals(plan.getIsActive()) || Integer.valueOf(1).equals(plan.getIsDeleted())) {
+            throw new RuntimeException("This plan is currently unavailable. Please choose another plan.");
+        }
         long amount = amountFor(code);
         String currency = currencyFor(code);
         String orderId = razorPayService.createOrder(amount, currency, "receipt_" + userId.toString().substring(0,8));

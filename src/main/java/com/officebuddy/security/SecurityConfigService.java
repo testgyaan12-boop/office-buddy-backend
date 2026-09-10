@@ -30,11 +30,12 @@ public class SecurityConfigService {
     private void seed(String key, String value, String description) {
         try {
             if (repo.findByConfigKey(key).isEmpty()) {
-                repo.save(SecuritySetting.builder()
+                var setting = SecuritySetting.builder()
                         .configKey(key)
                         .configValue(value)
-                        .description(description)
-                        .build());
+                        .build();
+                setting.setDescription(description);
+                repo.save(setting);
                 log.info("Seeded security_config {}={}", key, value);
             }
         } catch (Exception e) {

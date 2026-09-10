@@ -26,4 +26,5 @@ public class SubscriptionDto {
     private Long amountPaise;
     private String currency;
     private String razorpayKeyId;
+    private String paymentProvider;
 }
