@@ -388,6 +388,20 @@ CREATE TABLE IF NOT EXISTS invoices (
 );
 CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON invoices(user_id);
 
+CREATE TABLE IF NOT EXISTS custom_ads (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    product_img_link VARCHAR(1024),
+    product_open_link VARCHAR(1024),
+    is_active INTEGER NOT NULL DEFAULT 1,
+    remarks VARCHAR(255),
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    created_by BIGINT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_by BIGINT,
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS payment_config (
     id BIGSERIAL PRIMARY KEY,
     provider VARCHAR(50) NOT NULL UNIQUE,

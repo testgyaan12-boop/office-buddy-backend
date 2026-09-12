@@ -5,6 +5,8 @@ import com.officebuddy.adAndSubscription.provider.entity.AdProvider;
 import com.officebuddy.adAndSubscription.provider.repository.AdProviderRepository;
 import com.officebuddy.adAndSubscription.config.entity.AdConfig;
 import com.officebuddy.adAndSubscription.config.repository.AdConfigRepository;
+import com.officebuddy.adAndSubscription.customad.CustomAd;
+import com.officebuddy.adAndSubscription.customad.CustomAdRepository;
 import com.officebuddy.adAndSubscription.subscription.entity.Subscription;
 import com.officebuddy.adAndSubscription.subscription.plan.entity.Plan;
 import com.officebuddy.adAndSubscription.subscription.plan.repository.PlanRepository;
@@ -49,6 +51,7 @@ public class AdminCatalogController {
     private final ReminderRepository reminderRepository;
     private final AdProviderRepository adProviderRepository;
     private final AdConfigRepository adConfigRepository;
+    private final CustomAdRepository customAdRepository;
     private final SecuritySettingRepository securitySettingRepository;
     private final PaymentConfigRepository paymentConfigRepository;
 
@@ -348,6 +351,36 @@ public class AdminCatalogController {
     public ResponseEntity<Map<String, String>> deleteAdConfig(@PathVariable Long id) {
         adConfigRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("message", "Ad config deleted"));
+    }
+
+    // ---- custom ads ----
+    @GetMapping("/custom-ads")
+    public ResponseEntity<?> customAds() {
+        return ResponseEntity.ok(customAdRepository.findAll());
+    }
+
+    @PostMapping("/custom-ads")
+    public ResponseEntity<CustomAd> createCustomAd(@RequestBody CustomAd ad) {
+        ad.setId(null);
+        return ResponseEntity.ok(customAdRepository.save(ad));
+    }
+
+    @PutMapping("/custom-ads/{id}")
+    public ResponseEntity<CustomAd> updateCustomAd(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        var ad = customAdRepository.findById(id).orElseThrow(() -> new RuntimeException("Not found"));
+        if (body.get("title") != null) ad.setTitle(body.get("title").toString());
+        if (body.get("productImgLink") != null) ad.setProductImgLink(body.get("productImgLink").toString());
+        if (body.get("productOpenLink") != null) ad.setProductOpenLink(body.get("productOpenLink").toString());
+        if (body.get("isActive") != null) ad.setIsActive(Integer.parseInt(body.get("isActive").toString()));
+        if (body.get("isDeleted") != null) ad.setIsDeleted(Integer.parseInt(body.get("isDeleted").toString()));
+        if (body.get("remarks") != null) ad.setRemarks(body.get("remarks").toString());
+        return ResponseEntity.ok(customAdRepository.save(ad));
+    }
+
+    @DeleteMapping("/custom-ads/{id}")
+    public ResponseEntity<Map<String, String>> deleteCustomAd(@PathVariable Long id) {
+        customAdRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("message", "Custom ad deleted"));
     }
 
     // ---- security settings ----
