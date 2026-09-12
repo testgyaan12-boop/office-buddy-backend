@@ -32,19 +32,19 @@ public class Plan extends BaseEntity {
     @Column(name = "allocated_unit")
     private String allocatedUnit;
 
-    @Column(name = "amount_paise")
-    private Long amountPaise;
+    @Column(name = "amount")
+    private Long amount; // rupees; nullable for safe auto-migration on existing DBs
 
     @Column(name = "currency")
     private String currency;
 
-    public Plan(String planName, String planCode, String period, Long allocatedBytes, String allocatedUnit, Long amountPaise, String currency) {
+    public Plan(String planName, String planCode, String period, Long allocatedBytes, String allocatedUnit, Long amount, String currency) {
         this.planName = planName;
         this.planCode = planCode;
         this.period = period;
         this.allocatedBytes = allocatedBytes;
         this.allocatedUnit = allocatedUnit;
-        this.amountPaise = amountPaise;
+        this.amount = amount;
         this.currency = currency;
     }
 }

@@ -18,7 +18,7 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
 
     org.springframework.data.domain.Page<Subscription> findByUserId(UUID userId, org.springframework.data.domain.Pageable pageable);
 
-    @org.springframework.data.jpa.repository.Query("SELECT s FROM Subscription s WHERE (:userId IS NULL OR s.userId = :userId) AND (:q IS NULL OR LOWER(s.planCode) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(s.planName) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(s.status) LIKE LOWER(CONCAT('%', :q, '%')))")
+    @org.springframework.data.jpa.repository.Query("SELECT s FROM Subscription s WHERE (:userId IS NULL OR s.userId = :userId) AND (:q IS NULL OR LOWER(s.planCode) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(s.planName) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(s.status) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')))")
     org.springframework.data.domain.Page<Subscription> searchAdmin(
             @org.springframework.data.repository.query.Param("userId") UUID userId,
             @org.springframework.data.repository.query.Param("q") String q,

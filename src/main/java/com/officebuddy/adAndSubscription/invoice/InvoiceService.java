@@ -25,7 +25,7 @@ public class InvoiceService {
 
     private final InvoiceRepository repo;
 
-    public Invoice createForSubscription(User user, Subscription sub, String paymentId, long amountPaise, String currency) {
+    public Invoice createForSubscription(User user, Subscription sub, String paymentId, long amount, String currency) {
         if (paymentId != null) {
             var dup = repo.findByRazorpayPaymentId(paymentId).orElse(null);
             if (dup != null) return dup;
@@ -38,7 +38,7 @@ public class InvoiceService {
                 .invoiceNo(invoiceNo)
                 .planCode(sub.getPlanCode())
                 .planName(sub.getPlanName())
-                .amountPaise(amountPaise)
+                .amount(amount)
                 .currency(currency != null ? currency : "INR")
                 .razorpayOrderId(sub.getRazorpayOrderId())
                 .razorpayPaymentId(paymentId)
@@ -79,7 +79,7 @@ public class InvoiceService {
             table.setWidths(new float[]{3, 2});
             table.addCell("Item");
             table.addCell("Amount");
-            double amount = inv.getAmountPaise() != null ? inv.getAmountPaise() / 100.0 : 0;
+            double amount = inv.getAmount() != null ? inv.getAmount() : 0;
             table.addCell((inv.getPlanName() != null ? inv.getPlanName() : inv.getPlanCode()) + " subscription");
             table.addCell(String.format("%s %.2f", inv.getCurrency() != null ? inv.getCurrency() : "INR", amount));
             doc.add(table);

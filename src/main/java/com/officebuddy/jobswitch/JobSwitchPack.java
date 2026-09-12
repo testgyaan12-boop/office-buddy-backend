@@ -7,6 +7,7 @@ import lombok.experimental.SuperBuilder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -30,6 +31,15 @@ public class JobSwitchPack extends BaseEntity {
     private String bundleKey;
 
     private String selectedTypes; // JSON e.g. {"OFFER_LETTER":2,"PAYSLIP":3}
+
+    @Column(name = "selected_company_ids", columnDefinition = "TEXT")
+    private String selectedCompanyIds; // JSON array of company UUID strings, null/empty = all
+
+    @Column(name = "date_from")
+    private LocalDate dateFrom;
+
+    @Column(name = "date_to")
+    private LocalDate dateTo;
 
     private Integer downloadCount;
 

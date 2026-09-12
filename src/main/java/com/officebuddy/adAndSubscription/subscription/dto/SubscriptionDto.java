@@ -23,7 +23,7 @@ public class SubscriptionDto {
     private String expiryDate;
     private String createdAt;
     private String razorpayOrderId;
-    private Long amountPaise;
+    private Long amount;
     private String currency;
     private String razorpayKeyId;
     private String paymentProvider;

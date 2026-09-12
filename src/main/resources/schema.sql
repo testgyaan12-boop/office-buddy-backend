@@ -342,7 +342,7 @@ CREATE TABLE IF NOT EXISTS plans (
     period VARCHAR(20),
     allocated_bytes BIGINT NOT NULL DEFAULT 209715200,
     allocated_unit VARCHAR(10) NOT NULL DEFAULT 'MB',
-    amount_paise BIGINT NOT NULL DEFAULT 0,
+    amount BIGINT NOT NULL DEFAULT 0,
     currency VARCHAR(10) NOT NULL DEFAULT 'INR',
     is_active INTEGER NOT NULL DEFAULT 1,
     remarks VARCHAR(255),
@@ -352,16 +352,18 @@ CREATE TABLE IF NOT EXISTS plans (
     updated_by BIGINT,
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+ALTER TABLE plans ADD COLUMN IF NOT EXISTS amount BIGINT;
+UPDATE plans SET amount = amount_paise WHERE amount IS NULL AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'plans' AND column_name = 'amount_paise');
+ALTER TABLE plans DROP COLUMN IF EXISTS amount_paise;
 ALTER TABLE plans ADD COLUMN IF NOT EXISTS allocated_bytes BIGINT NOT NULL DEFAULT 209715200;
 ALTER TABLE plans ADD COLUMN IF NOT EXISTS allocated_unit VARCHAR(10) NOT NULL DEFAULT 'MB';
-ALTER TABLE plans ADD COLUMN IF NOT EXISTS amount_paise BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE plans ADD COLUMN IF NOT EXISTS amount BIGINT NOT NULL DEFAULT 0;
 ALTER TABLE plans ADD COLUMN IF NOT EXISTS currency VARCHAR(10) NOT NULL DEFAULT 'INR';
 UPDATE plans SET
     allocated_bytes = CASE plan_code WHEN 'FREE' THEN 104857600 WHEN 'PRO_MONTHLY' THEN 524288000 WHEN 'PRO_YEARLY' THEN 2147483648 ELSE COALESCE(allocated_bytes, 209715200) END,
     allocated_unit = CASE plan_code WHEN 'PRO_YEARLY' THEN 'GB' WHEN 'FREE' THEN 'MB' WHEN 'PRO_MONTHLY' THEN 'MB' ELSE COALESCE(allocated_unit, 'MB') END,
-    amount_paise = CASE plan_code WHEN 'FREE' THEN 0 WHEN 'PRO_MONTHLY' THEN 9900 WHEN 'PRO_YEARLY' THEN 99900 ELSE COALESCE(amount_paise, 0) END,
     currency = COALESCE(currency, 'INR')
-WHERE allocated_bytes IS NULL OR allocated_unit IS NULL OR amount_paise IS NULL OR currency IS NULL;
+WHERE allocated_bytes IS NULL OR allocated_unit IS NULL OR amount IS NULL OR currency IS NULL;
 
 ALTER TABLE user_storage ADD COLUMN IF NOT EXISTS plan_id BIGINT REFERENCES plans(id);
 
@@ -372,7 +374,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     invoice_no VARCHAR(50) NOT NULL UNIQUE,
     plan_code VARCHAR(50) NOT NULL,
     plan_name VARCHAR(100) NOT NULL,
-    amount_paise BIGINT NOT NULL DEFAULT 0,
+    amount BIGINT NOT NULL DEFAULT 0,
     currency VARCHAR(10) NOT NULL DEFAULT 'INR',
     razorpay_order_id VARCHAR(100),
     razorpay_payment_id VARCHAR(100),
@@ -387,6 +389,13 @@ CREATE TABLE IF NOT EXISTS invoices (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON invoices(user_id);
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS amount BIGINT;
+UPDATE invoices SET amount = amount_paise WHERE amount IS NULL AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'invoices' AND column_name = 'amount_paise');
+ALTER TABLE invoices DROP COLUMN IF EXISTS amount_paise;
+
+ALTER TABLE job_switch_packs ADD COLUMN IF NOT EXISTS selected_company_ids TEXT;
+ALTER TABLE job_switch_packs ADD COLUMN IF NOT EXISTS date_from DATE;
+ALTER TABLE job_switch_packs ADD COLUMN IF NOT EXISTS date_to DATE;
 
 CREATE TABLE IF NOT EXISTS custom_ads (
     id BIGSERIAL PRIMARY KEY,

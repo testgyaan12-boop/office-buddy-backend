@@ -31,7 +31,7 @@ public class InvoiceController {
             m.put("invoiceNo", inv.getInvoiceNo());
             m.put("planCode", inv.getPlanCode());
             m.put("planName", inv.getPlanName());
-            m.put("amountPaise", inv.getAmountPaise());
+            m.put("amount", inv.getAmount());
             m.put("currency", inv.getCurrency());
             m.put("status", inv.getStatus());
             m.put("razorpayPaymentId", inv.getRazorpayPaymentId());

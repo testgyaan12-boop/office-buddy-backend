@@ -33,6 +33,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Page<User> findByNameContainingIgnoreCaseOrEmailContainingIgnoreCase(String name, String email, Pageable pageable);
 
-    @Query("SELECT u FROM User u WHERE (:q IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :q, '%'))) AND (:from IS NULL OR u.createdAt >= :from) AND (:to IS NULL OR u.createdAt <= :to)")
+    @Query("SELECT u FROM User u WHERE (:q IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%'))) AND (:from IS NULL OR u.createdAt >= :from) AND (:to IS NULL OR u.createdAt <= :to)")
     Page<User> searchAdmin(@Param("q") String q, @Param("from") Date from, @Param("to") Date to, Pageable pageable);
 }

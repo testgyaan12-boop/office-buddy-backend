@@ -37,8 +37,8 @@ public class Invoice extends BaseEntity {
     @Column(name = "plan_name", nullable = false)
     private String planName;
 
-    @Column(name = "amount_paise", nullable = false)
-    private Long amountPaise;
+    @Column(name = "amount")
+    private Long amount; // rupees; nullable for safe auto-migration on existing DBs
 
     @Column(name = "currency", nullable = false)
     private String currency;

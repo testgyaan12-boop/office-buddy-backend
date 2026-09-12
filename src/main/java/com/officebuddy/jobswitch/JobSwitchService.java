@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -44,8 +45,58 @@ public class JobSwitchService {
         return generatePack(userId, null);
     }
 
+    private Set<UUID> parseCompanyIds(List<String> raw) {
+        Set<UUID> out = new HashSet<>();
+        if (raw == null) return out;
+        for (var s : raw) {
+            if (s == null || s.isBlank()) continue;
+            try {
+                out.add(UUID.fromString(s.trim()));
+            } catch (Exception ignored) {}
+        }
+        return out;
+    }
+
+    private Set<UUID> parseCompanyIdSet(String json) {
+        if (json == null || json.isBlank()) return new HashSet<>();
+        try {
+            List<String> list = objectMapper.readValue(json, new TypeReference<List<String>>() {});
+            return parseCompanyIds(list);
+        } catch (Exception e) {
+            log.warn("Failed to parse pack company selection, using all", e);
+            return new HashSet<>();
+        }
+    }
+
+    private LocalDate parseFilterDate(String s) {
+        if (s == null || s.isBlank()) return null;
+        try {
+            return LocalDate.parse(s.trim().substring(0, 10));
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private List<Document> applyPackFilters(List<Document> all, Set<UUID> companyIds, LocalDate from, LocalDate to) {
+        return all.stream()
+                .filter(d -> companyIds.isEmpty() || (d.getCompanyId() != null && companyIds.contains(d.getCompanyId())))
+                .filter(d -> {
+                    if (from == null && to == null) return true;
+                    LocalDate dd = d.getDocumentDate();
+                    if (dd == null) return true;
+                    if (from != null && dd.isBefore(from)) return false;
+                    if (to != null && dd.isAfter(to)) return false;
+                    return true;
+                })
+                .collect(Collectors.toList());
+    }
+
     public JobSwitchPackDto generatePack(UUID userId, JobSwitchGenerateRequest req) {
         var documents = documentRepository.findByUserIdOrderByUploadedAtDesc(userId);
+        Set<UUID> filterCompanies = parseCompanyIds(req != null ? req.getCompanyIds() : null);
+        LocalDate filterFrom = parseFilterDate(req != null ? req.getFromDate() : null);
+        LocalDate filterTo = parseFilterDate(req != null ? req.getToDate() : null);
+        documents = applyPackFilters(documents, filterCompanies, filterFrom, filterTo);
 
         boolean custom = req != null && req.getIncludeCounts() != null && !req.getIncludeCounts().isEmpty();
 
@@ -73,10 +124,15 @@ public class JobSwitchService {
         }
 
         String selectedJson = null;
+        String selectedCompaniesJson = null;
         try {
             if (custom) selectedJson = objectMapper.writeValueAsString(req.getIncludeCounts());
+            if (!filterCompanies.isEmpty()) {
+                selectedCompaniesJson = objectMapper.writeValueAsString(
+                        filterCompanies.stream().map(UUID::toString).collect(Collectors.toList()));
+            }
         } catch (Exception e) {
-            log.warn("Failed to serialize selectedTypes", e);
+            log.warn("Failed to serialize pack selection", e);
         }
 
         try {
@@ -90,6 +146,9 @@ public class JobSwitchService {
                     .status("READY")
                     .bundleKey(result.getKey())
                     .selectedTypes(selectedJson)
+                    .selectedCompanyIds(selectedCompaniesJson)
+                    .dateFrom(filterFrom)
+                    .dateTo(filterTo)
                     .active(true)
                     .downloadCount(0)
                     .isPaid(false)
@@ -205,6 +264,7 @@ public class JobSwitchService {
         }
 
         var documents = documentRepository.findByUserIdOrderByUploadedAtDesc(userId);
+        documents = applyPackFilters(documents, parseCompanyIdSet(pack.getSelectedCompanyIds()), pack.getDateFrom(), pack.getDateTo());
         var folders = new java.util.LinkedHashMap<String, List<Document>>();
         if (selected == null || selected.isEmpty()) {
             folders.put("Experience Certificates", documents.stream()
@@ -230,6 +290,24 @@ public class JobSwitchService {
         // track the download (paid gate enforced inside)
         recordDownload(userId, packId, ip, userAgent);
         return pdf;
+    }
+
+    private byte[] downloadDocBytes(Document doc) {
+        String fileUrl = doc.getFileUrl();
+        if (fileUrl != null && !fileUrl.isBlank()) {
+            try (var in = new java.net.URL(fileUrl).openStream()) {
+                byte[] data = in.readAllBytes();
+                if (data != null && data.length > 0) return data;
+            } catch (Exception e) {
+                log.warn("Direct fileUrl fetch failed for doc {}, trying storage key: {}", doc.getId(), e.getMessage());
+            }
+        }
+        try {
+            return storageService.downloadBytes(doc.getFileKey());
+        } catch (Exception e) {
+            log.warn("Storage key fetch failed for doc {} key {}: {}", doc.getId(), doc.getFileKey(), e.getMessage());
+            return null;
+        }
     }
 
     private byte[] buildMergedPdf(java.util.LinkedHashMap<String, List<Document>> folders) throws IOException {
@@ -266,12 +344,7 @@ public class JobSwitchService {
 
             for (var entry : folders.entrySet()) {
                 for (var doc : entry.getValue()) {
-                    byte[] data = null;
-                    try {
-                        data = storageService.downloadBytes(doc.getFileKey());
-                    } catch (Exception e) {
-                        log.warn("Skip missing file for doc {} key {}: {}", doc.getId(), doc.getFileKey(), e.getMessage());
-                    }
+                    byte[] data = downloadDocBytes(doc);
                     if (data == null || data.length == 0) {
                         missing.add(entry.getKey() + " / " + doc.getFileName() + " (missing)");
                         continue;
@@ -407,7 +480,7 @@ public class JobSwitchService {
     ) throws IOException {
         for (var doc : docs) {
             try {
-                byte[] data = storageService.downloadBytes(doc.getFileKey());
+                byte[] data = downloadDocBytes(doc);
                 if (data == null || data.length == 0) {
                     log.warn("Skip empty file for doc {}", doc.getId());
                     missing.add(folder + doc.getFileName() + " (empty)");

@@ -28,7 +28,7 @@ public class PlanController {
                     m.put("period", p.getPeriod());
                     m.put("allocatedBytes", p.getAllocatedBytes());
                     m.put("allocatedUnit", p.getAllocatedUnit());
-                    m.put("amountPaise", p.getAmountPaise());
+                    m.put("amount", p.getAmount());
                     m.put("currency", p.getCurrency());
                     return m;
                 })

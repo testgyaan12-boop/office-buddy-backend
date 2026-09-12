@@ -64,7 +64,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private long amountFor(String code) {
         try {
             var plan = planRepo.findByPlanCode(code).orElse(null);
-            if (plan != null && plan.getAmountPaise() != null) return plan.getAmountPaise();
+            if (plan != null && plan.getAmount() != null) return plan.getAmount();
         } catch (Exception ignored) {}
         if ("PRO_YEARLY".equals(code)) return 99900;
         if ("PRO_MONTHLY".equals(code)) return 9900;
@@ -118,7 +118,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .expiryDate(s.getExpiryDate() != null ? s.getExpiryDate().toString() : null)
                 .createdAt(s.getCreatedAt() != null ? s.getCreatedAt().toString() : null)
                 .razorpayOrderId(s.getRazorpayOrderId())
-                .amountPaise(amountFor(s.getPlanCode()))
+                .amount(amountFor(s.getPlanCode()))
                 .currency(currencyFor(s.getPlanCode()))
                 .razorpayKeyId(effectiveKeyId())
                 .paymentProvider(activePaymentProvider())
@@ -169,7 +169,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         }
         long amount = amountFor(code);
         String currency = currencyFor(code);
-        String orderId = razorPayService.createOrder(amount, currency, "receipt_" + userId.toString().substring(0,8));
+        // Razorpay gateway demands paise; stored amount is rupees
+        String orderId = razorPayService.createOrder(amount * 100, currency, "receipt_" + userId.toString().substring(0,8));
         var sub = Subscription.builder()
                 .userId(userId)
                 .planCode(code)

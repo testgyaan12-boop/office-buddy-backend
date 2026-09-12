@@ -14,6 +14,7 @@ import com.officebuddy.adAndSubscription.subscription.repository.SubscriptionRep
 import com.officebuddy.company.CompanyRepository;
 import com.officebuddy.document.DocumentRepository;
 import com.officebuddy.goal.GoalRepository;
+import com.officebuddy.jobswitch.JobSwitchPackDownloadDetailsRepository;
 import com.officebuddy.todo.TodoRepository;
 import com.officebuddy.lookup.Lookup;
 import com.officebuddy.lookup.LookupRepository;
@@ -43,6 +44,7 @@ public class AdminCatalogController {
     private final DocumentRepository documentRepository;
     private final GoalRepository goalRepository;
     private final TodoRepository todoRepository;
+    private final JobSwitchPackDownloadDetailsRepository packDownloadDetailsRepository;
     private final CompanyRepository companyRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final InvoiceRepository invoiceRepository;
@@ -57,9 +59,16 @@ public class AdminCatalogController {
 
     // ---- documents ----
     @GetMapping("/documents")
-    public ResponseEntity<?> documents(@RequestParam(required = false) UUID userId, @PageableDefault(size = 20) Pageable pageable) {
-        if (userId != null) return ResponseEntity.ok(documentRepository.findByUserId(userId, pageable));
-        return ResponseEntity.ok(documentRepository.findAll(pageable));
+    public ResponseEntity<?> documents(
+            @RequestParam(required = false) UUID userId,
+            @RequestParam(required = false) String q,
+            @PageableDefault(size = 20) Pageable pageable) {
+        String query = (q == null || q.isBlank()) ? null : q.trim();
+        if (query == null) {
+            if (userId != null) return ResponseEntity.ok(documentRepository.findByUserId(userId, pageable));
+            return ResponseEntity.ok(documentRepository.findAll(pageable));
+        }
+        return ResponseEntity.ok(documentRepository.searchAdmin(userId, query, pageable));
     }
 
     @GetMapping("/documents/{id}")
@@ -180,7 +189,7 @@ public class AdminCatalogController {
         if (body.get("period") != null) plan.setPeriod(body.get("period").toString());
         if (body.get("allocatedBytes") != null) plan.setAllocatedBytes(Long.parseLong(body.get("allocatedBytes").toString()));
         if (body.get("allocatedUnit") != null) plan.setAllocatedUnit(body.get("allocatedUnit").toString());
-        if (body.get("amountPaise") != null) plan.setAmountPaise(Long.parseLong(body.get("amountPaise").toString()));
+        if (body.get("amount") != null) plan.setAmount(Long.parseLong(body.get("amount").toString()));
         if (body.get("currency") != null) plan.setCurrency(body.get("currency").toString());
         if (body.get("isActive") != null) plan.setIsActive(Integer.parseInt(body.get("isActive").toString()));
         if (body.get("isDeleted") != null) plan.setIsDeleted(Integer.parseInt(body.get("isDeleted").toString()));
@@ -276,6 +285,18 @@ public class AdminCatalogController {
     public ResponseEntity<Map<String, String>> deleteTodo(@PathVariable UUID id) {
         todoRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("message", "Todo deleted"));
+    }
+
+    // ---- pack downloads ----
+    @GetMapping("/pack-downloads")
+    public ResponseEntity<?> packDownloads(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(packDownloadDetailsRepository.findAll(pageable));
+    }
+
+    @DeleteMapping("/pack-downloads/{id}")
+    public ResponseEntity<Map<String, String>> deletePackDownload(@PathVariable UUID id) {
+        packDownloadDetailsRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("message", "Download record deleted"));
     }
 
     // ---- reminders ----

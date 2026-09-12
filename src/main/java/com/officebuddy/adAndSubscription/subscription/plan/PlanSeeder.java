@@ -17,20 +17,20 @@ public class PlanSeeder {
     @PostConstruct
     public void seed() {
         seed("Free", "FREE", "LIFETIME", 104857600L, "MB", 0L, "INR");
-        seed("Monthly", "PRO_MONTHLY", "MONTHLY", 524288000L, "MB", 9900L, "INR");
-        seed("Yearly", "PRO_YEARLY", "YEARLY", 2147483648L, "GB", 99900L, "INR");
+        seed("Monthly", "PRO_MONTHLY", "MONTHLY", 524288000L, "MB", 99L, "INR");
+        seed("Yearly", "PRO_YEARLY", "YEARLY", 2147483648L, "GB", 999L, "INR");
     }
 
-    private void seed(String name, String code, String period, Long bytes, String unit, Long amountPaise, String currency) {
+    private void seed(String name, String code, String period, Long bytes, String unit, Long amount, String currency) {
         try {
             var existing = repo.findByPlanCode(code).orElse(null);
             if (existing == null) {
-                repo.save(new Plan(name, code, period, bytes, unit, amountPaise, currency));
-                log.info("Seeded plan {} ({} {}, {} {})", code, bytes, unit, amountPaise, currency);
-            } else if (existing.getAllocatedBytes() == null || existing.getAmountPaise() == null) {
+                repo.save(new Plan(name, code, period, bytes, unit, amount, currency));
+                log.info("Seeded plan {} ({} {}, {} {})", code, bytes, unit, amount, currency);
+            } else if (existing.getAllocatedBytes() == null || existing.getAmount() == null) {
                 existing.setAllocatedBytes(bytes);
                 existing.setAllocatedUnit(unit);
-                existing.setAmountPaise(amountPaise);
+                existing.setAmount(amount);
                 existing.setCurrency(currency);
                 repo.save(existing);
                 log.info("Backfilled plan {} pricing/storage", code);
