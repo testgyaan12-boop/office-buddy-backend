@@ -1,6 +1,16 @@
 package com.officebuddy.jobswitch;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lowagie.text.Font;
+import com.lowagie.text.FontFactory;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfContentByte;
+import com.lowagie.text.pdf.PdfImportedPage;
+import com.lowagie.text.pdf.PdfReader;
+import com.lowagie.text.pdf.PdfWriter;
 import com.officebuddy.document.Document;
 import com.officebuddy.document.DocumentRepository;
 import com.officebuddy.jobswitch.dto.JobSwitchDownloadDetailsDto;
@@ -177,6 +187,153 @@ public class JobSwitchService {
                 .status(pack.getStatus())
                 .downloadUrl(storageService.getPresignedUrl(pack.getBundleKey()))
                 .build();
+    }
+
+    public byte[] downloadPackPdf(UUID userId, UUID packId, String ip, String userAgent) {
+        var pack = jobSwitchRepository.findById(packId)
+                .orElseThrow(() -> new RuntimeException("Pack not found"));
+        if (!pack.getUserId().equals(userId)) throw new RuntimeException("Access denied");
+        if (pack.getDeletedAt() != null || Boolean.FALSE.equals(pack.getActive())) throw new RuntimeException("Pack not active");
+
+        Map<String, Integer> selected = null;
+        if (pack.getSelectedTypes() != null && !pack.getSelectedTypes().isBlank()) {
+            try {
+                selected = objectMapper.readValue(pack.getSelectedTypes(), new TypeReference<Map<String, Integer>>() {});
+            } catch (Exception e) {
+                log.warn("Failed to parse pack selection, using defaults", e);
+            }
+        }
+
+        var documents = documentRepository.findByUserIdOrderByUploadedAtDesc(userId);
+        var folders = new java.util.LinkedHashMap<String, List<Document>>();
+        if (selected == null || selected.isEmpty()) {
+            folders.put("Experience Certificates", documents.stream()
+                    .filter(d -> "CERTIFICATE".equals(d.getType()) || "RELIEVING_LETTER".equals(d.getType()) || "TDS_CERTIFICATE".equals(d.getType())).toList());
+            folders.put("Payslips", documents.stream().filter(d -> "PAYSLIP".equals(d.getType())).limit(3).toList());
+            folders.put("Joining Letters", documents.stream().filter(d -> "JOINING_LETTER".equals(d.getType())).toList());
+            folders.put("Increment Letters", documents.stream().filter(d -> "INCREMENT_LETTER".equals(d.getType())).toList());
+            folders.put("Offer Letters", documents.stream().filter(d -> "OFFER_LETTER".equals(d.getType()) || "CONFIRMATION_LETTER".equals(d.getType())).toList());
+        } else {
+            folders.put("Experience Certificates", getLimited(documents, Set.of("CERTIFICATE", "RELIEVING_LETTER", "TDS_CERTIFICATE"), selected));
+            folders.put("Payslips", getLimited(documents, Set.of("PAYSLIP"), selected));
+            folders.put("Joining Letters", getLimited(documents, Set.of("JOINING_LETTER"), selected));
+            folders.put("Increment Letters", getLimited(documents, Set.of("INCREMENT_LETTER"), selected));
+            folders.put("Offer Letters", getLimited(documents, Set.of("OFFER_LETTER", "CONFIRMATION_LETTER"), selected));
+        }
+
+        byte[] pdf;
+        try {
+            pdf = buildMergedPdf(folders);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to build pack PDF", e);
+        }
+        // track the download (paid gate enforced inside)
+        recordDownload(userId, packId, ip, userAgent);
+        return pdf;
+    }
+
+    private byte[] buildMergedPdf(java.util.LinkedHashMap<String, List<Document>> folders) throws IOException {
+        var baos = new ByteArrayOutputStream();
+        var missing = new ArrayList<String>();
+        int totalDocs = folders.values().stream().mapToInt(List::size).sum();
+        Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20);
+        Font sectionFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
+        Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 11);
+        Font smallFont = FontFactory.getFont(FontFactory.HELVETICA, 9);
+
+        com.lowagie.text.Document pdf = new com.lowagie.text.Document(PageSize.A4, 36, 36, 36, 36);
+        try {
+            PdfWriter writer = PdfWriter.getInstance(pdf, baos);
+            pdf.open();
+            PdfContentByte canvas = writer.getDirectContent();
+
+            // Cover page
+            pdf.add(new Paragraph("Job Switch Pack", titleFont));
+            pdf.add(new Paragraph("Generated: " + LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")), normalFont));
+            pdf.add(new Paragraph("Total documents: " + totalDocs, normalFont));
+            pdf.add(new Paragraph(" "));
+            pdf.add(new Paragraph("Contents", sectionFont));
+            for (var entry : folders.entrySet()) {
+                if (entry.getValue().isEmpty()) continue;
+                pdf.add(new Paragraph(entry.getKey() + " (" + entry.getValue().size() + ")", normalFont));
+                for (var doc : entry.getValue()) {
+                    pdf.add(new Paragraph("   - " + doc.getTitle(), smallFont));
+                }
+            }
+
+            float pageW = PageSize.A4.getWidth() - 72;
+            float pageH = PageSize.A4.getHeight() - 150;
+
+            for (var entry : folders.entrySet()) {
+                for (var doc : entry.getValue()) {
+                    byte[] data = null;
+                    try {
+                        data = storageService.downloadBytes(doc.getFileKey());
+                    } catch (Exception e) {
+                        log.warn("Skip missing file for doc {} key {}: {}", doc.getId(), doc.getFileKey(), e.getMessage());
+                    }
+                    if (data == null || data.length == 0) {
+                        missing.add(entry.getKey() + " / " + doc.getFileName() + " (missing)");
+                        continue;
+                    }
+                    String name = doc.getFileName() != null ? doc.getFileName().toLowerCase() : "";
+                    String mime = doc.getMimeType() != null ? doc.getMimeType().toLowerCase() : "";
+                    boolean isImage = mime.startsWith("image/") || name.matches(".*\\.(jpe?g|png|gif|bmp)$");
+                    boolean isPdf = mime.equals("application/pdf") || name.endsWith(".pdf");
+
+                    if (isImage) {
+                        try {
+                            pdf.newPage();
+                            pdf.add(new Paragraph(doc.getTitle() + "  [" + entry.getKey() + "]", sectionFont));
+                            pdf.add(new Paragraph(" "));
+                            com.lowagie.text.Image img = com.lowagie.text.Image.getInstance(data);
+                            img.scaleToFit(pageW, pageH);
+                            img.setAlignment(com.lowagie.text.Image.ALIGN_CENTER);
+                            pdf.add(img);
+                            continue;
+                        } catch (Exception e) {
+                            log.warn("Image embed failed for doc {}, using info page: {}", doc.getId(), e.getMessage());
+                        }
+                    }
+                    if (isPdf) {
+                        try {
+                            PdfReader reader = new PdfReader(data);
+                            int pages = reader.getNumberOfPages();
+                            for (int i = 1; i <= pages; i++) {
+                                pdf.newPage();
+                                Rectangle pageSize = reader.getPageSize(i);
+                                float scale = Math.min(pageW / pageSize.getWidth(), (PageSize.A4.getHeight() - 72) / pageSize.getHeight());
+                                float offsetX = (PageSize.A4.getWidth() - pageSize.getWidth() * scale) / 2;
+                                float offsetY = (PageSize.A4.getHeight() - pageSize.getHeight() * scale) / 2;
+                                PdfImportedPage page = writer.getImportedPage(reader, i);
+                                canvas.addTemplate(page, scale, 0, 0, scale, offsetX, offsetY);
+                            }
+                            reader.close();
+                            continue;
+                        } catch (Exception e) {
+                            log.warn("PDF import failed for doc {}, using info page: {}", doc.getId(), e.getMessage());
+                        }
+                    }
+                    // Fallback info page for other types or failed embeds
+                    pdf.newPage();
+                    pdf.add(new Paragraph(doc.getTitle() + "  [" + entry.getKey() + "]", sectionFont));
+                    pdf.add(new Paragraph("Type: " + doc.getType(), normalFont));
+                    pdf.add(new Paragraph("File: " + doc.getFileName(), normalFont));
+                    pdf.add(new Paragraph(" "));
+                    pdf.add(new Paragraph("Original file kept in your vault. Open the app to view or download it.", normalFont));
+                }
+            }
+            if (!missing.isEmpty()) {
+                pdf.newPage();
+                pdf.add(new Paragraph("Skipped files", sectionFont));
+                for (var m : missing) {
+                    pdf.add(new Paragraph(" - " + m, smallFont));
+                }
+            }
+        } finally {
+            if (pdf.isOpen()) pdf.close();
+        }
+        return baos.toByteArray();
     }
 
     public List<JobSwitchDownloadDetailsDto> getDownloadDetails(UUID userId) {

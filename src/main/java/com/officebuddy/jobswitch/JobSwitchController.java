@@ -57,6 +57,22 @@ public class JobSwitchController {
         return ResponseEntity.ok(jobSwitchService.recordDownload(user.getId(), packId, ip, ua));
     }
 
+    @GetMapping("/pack/{packId}/pdf")
+    public ResponseEntity<byte[]> downloadPackPdf(
+            Authentication authentication,
+            @PathVariable UUID packId,
+            HttpServletRequest request) {
+        var user = (User) authentication.getPrincipal();
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null) ip = request.getRemoteAddr();
+        String ua = request.getHeader("User-Agent");
+        byte[] pdf = jobSwitchService.downloadPackPdf(user.getId(), packId, ip, ua);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"job-switch-pack.pdf\"")
+                .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
     @GetMapping("/pack-download-details")
     public ResponseEntity<List<JobSwitchDownloadDetailsDto>> getDownloadDetails(Authentication authentication) {
         var user = (User) authentication.getPrincipal();
