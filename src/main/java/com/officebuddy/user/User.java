@@ -40,6 +40,10 @@ public class User extends BaseEntity implements UserDetails {
     private String avatarUrl;
     private String headline;
     private String role;
+
+    @Builder.Default
+    @Column(name = "access_role", nullable = false)
+    private String accessRole = "member";
     private String domain;
     private LocalDate dateOfBirth;
     private String gender;
@@ -83,7 +87,8 @@ public class User extends BaseEntity implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        String role = accessRole != null ? accessRole.toUpperCase() : "MEMBER";
+        return List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + role));
     }
 
     @Override
@@ -143,6 +148,11 @@ public class User extends BaseEntity implements UserDetails {
                 .bankAccountNumber(bankAccountNumber)
                 .ifscCode(ifscCode)
                 .emergencyContact(emergencyContact)
+                .accessRole(accessRole)
+                .isActive(getIsActive())
+                .isDeleted(getIsDeleted())
+                .failedLoginAttempts(failedLoginAttempts)
+                .accountLockedUntil(accountLockedUntil != null ? accountLockedUntil.toString() : null)
                 .build();
     }
 }

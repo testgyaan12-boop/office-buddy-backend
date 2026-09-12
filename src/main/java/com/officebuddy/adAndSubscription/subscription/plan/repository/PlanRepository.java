@@ -9,4 +9,6 @@ import java.util.Optional;
 @Repository
 public interface PlanRepository extends JpaRepository<Plan, Long> {
     Optional<Plan> findByPlanCode(String planCode);
+
+    java.util.List<Plan> findByPlanNameContainingIgnoreCaseOrPlanCodeContainingIgnoreCase(String name, String code);
 }

@@ -11,4 +11,6 @@ import java.util.UUID;
 public interface ReminderRepository extends JpaRepository<Reminder, UUID> {
     List<Reminder> findByUserIdAndIsDeletedOrderByRemindAtAsc(UUID userId, Integer isDeleted);
     List<Reminder> findByUserIdAndCategoryAndIsDeletedOrderByRemindAtAsc(UUID userId, String category, Integer isDeleted);
+
+    org.springframework.data.domain.Page<Reminder> findByUserId(UUID userId, org.springframework.data.domain.Pageable pageable);
 }

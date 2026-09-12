@@ -61,6 +61,19 @@ public class TimelineService {
         return Math.max(1, now.getYear() - startYear);
     }
 
+    public int getExperienceMonths(UUID userId) {
+        var companies = companyRepository.findByUserIdOrderByStartDateDesc(userId);
+        if (companies.isEmpty()) return 0;
+
+        var earliest = companies.get(companies.size() - 1);
+        if (earliest.getStartDate() == null) return 0;
+        var start = YearMonth.from(earliest.getStartDate());
+        var now = YearMonth.now();
+        long totalMonths = java.time.temporal.ChronoUnit.MONTHS.between(start, now);
+        if (totalMonths < 0) totalMonths = 0;
+        return (int) (totalMonths % 12);
+    }
+
     private TimelineEventResponse toResponse(TimelineEvent event) {
         return TimelineEventResponse.builder()
                 .id(event.getId().toString())

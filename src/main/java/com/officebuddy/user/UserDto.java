@@ -37,4 +37,9 @@ public class UserDto {
     private String bankAccountNumber;
     private String ifscCode;
     private String emergencyContact;
+    private String accessRole;
+    private Integer isActive;
+    private Integer isDeleted;
+    private Integer failedLoginAttempts;
+    private String accountLockedUntil;
 }

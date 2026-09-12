@@ -27,6 +27,8 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
     @Query("SELECT COALESCE(SUM(d.fileSize),0) FROM Document d WHERE d.userId = ?1 AND d.deletedAt IS NULL")
     long sumUsedBytes(UUID userId);
 
+    org.springframework.data.domain.Page<Document> findByUserId(UUID userId, org.springframework.data.domain.Pageable pageable);
+
     @Query("SELECT d FROM Document d WHERE d.userId = :userId AND d.deletedAt IS NULL AND " +
            "(:query IS NULL OR :query = '' OR LOWER(d.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(d.fileName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +

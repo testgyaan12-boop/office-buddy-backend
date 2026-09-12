@@ -53,6 +53,7 @@ public class AuthService {
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .emailVerified(false)
                 .verificationToken(verificationToken)
+                .accessRole("member")
                 .build();
 
         var savedUser = userRepository.save(user);

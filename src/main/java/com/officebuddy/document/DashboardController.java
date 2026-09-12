@@ -26,12 +26,14 @@ public class DashboardController {
         long docCount = documentService.getDocumentCount(userId);
         long companyCount = companyService.getCompanyCount(userId);
         int experienceYears = timelineService.getExperienceYears(userId);
+        int experienceMonths = timelineService.getExperienceMonths(userId);
         long certificateCount = documentService.getCertificateCount(userId);
 
         return ResponseEntity.ok(Map.of(
                 "totalDocuments", docCount,
                 "totalCompanies", companyCount,
                 "experienceYears", experienceYears,
+                "experienceMonths", experienceMonths,
                 "totalCertificates", certificateCount
         ));
     }
