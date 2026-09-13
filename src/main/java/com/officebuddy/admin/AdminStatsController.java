@@ -63,4 +63,25 @@ public class AdminStatsController {
         out.put("lockedAccounts", userRepository.countByAccountLockedUntilAfter(LocalDateTime.now()));
         return ResponseEntity.ok(out);
     }
+
+    @GetMapping("/recent-logins")
+    public ResponseEntity<List<Map<String, Object>>> recentLogins() {
+        var users = userRepository.findTop10ByLastLoginAtIsNotNullOrderByLastLoginAtDesc();
+        if (users.isEmpty()) {
+            users = userRepository.findTop20ByOrderByCreatedAtDesc();
+        }
+        var list = new ArrayList<Map<String, Object>>();
+        for (var u : users) {
+            var m = new LinkedHashMap<String, Object>();
+            m.put("id", u.getId().toString());
+            m.put("name", u.getName());
+            m.put("email", u.getEmail());
+            m.put("avatarUrl", u.getAvatarUrl());
+            m.put("accessRole", u.getAccessRole());
+            m.put("lastLoginAt", u.getLastLoginAt() != null ? u.getLastLoginAt().toString() : null);
+            m.put("createdAt", u.getCreatedAt() != null ? u.getCreatedAt().toString() : null);
+            list.add(m);
+        }
+        return ResponseEntity.ok(list);
+    }
 }

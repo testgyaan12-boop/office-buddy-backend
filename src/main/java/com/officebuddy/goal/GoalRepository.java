@@ -18,7 +18,7 @@ public interface GoalRepository extends JpaRepository<Goal, UUID> {
 
     org.springframework.data.domain.Page<Goal> findByUserId(UUID userId, org.springframework.data.domain.Pageable pageable);
 
-    @Query("SELECT g FROM Goal g WHERE (:userId IS NULL OR g.userId = :userId) AND (:q IS NULL OR LOWER(g.title) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(g.category) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')))")
+    @Query("SELECT g FROM Goal g WHERE (CAST(:userId AS uuid) IS NULL OR g.userId = :userId) AND (CAST(:q AS string) IS NULL OR LOWER(g.title) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(g.category) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')))")
     org.springframework.data.domain.Page<Goal> searchAdmin(
             @org.springframework.data.repository.query.Param("userId") UUID userId,
             @org.springframework.data.repository.query.Param("q") String q,

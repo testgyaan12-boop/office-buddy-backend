@@ -17,7 +17,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
 
     org.springframework.data.domain.Page<Invoice> findByUserId(UUID userId, org.springframework.data.domain.Pageable pageable);
 
-    @org.springframework.data.jpa.repository.Query("SELECT i FROM Invoice i WHERE (:userId IS NULL OR i.userId = :userId) AND (:q IS NULL OR LOWER(i.invoiceNo) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(i.planName) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(i.status) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')))")
+    @org.springframework.data.jpa.repository.Query("SELECT i FROM Invoice i WHERE (CAST(:userId AS uuid) IS NULL OR i.userId = :userId) AND (CAST(:q AS string) IS NULL OR LOWER(i.invoiceNo) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(i.planName) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(i.status) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')))")
     org.springframework.data.domain.Page<Invoice> searchAdmin(
             @org.springframework.data.repository.query.Param("userId") UUID userId,
             @org.springframework.data.repository.query.Param("q") String q,

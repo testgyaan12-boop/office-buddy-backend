@@ -35,4 +35,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("SELECT u FROM User u WHERE (:q IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%'))) AND (:from IS NULL OR u.createdAt >= :from) AND (:to IS NULL OR u.createdAt <= :to)")
     Page<User> searchAdmin(@Param("q") String q, @Param("from") Date from, @Param("to") Date to, Pageable pageable);
+
+    List<User> findTop10ByLastLoginAtIsNotNullOrderByLastLoginAtDesc();
+
+    List<User> findTop20ByOrderByCreatedAtDesc();
 }

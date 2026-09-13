@@ -17,7 +17,7 @@ public interface CompanyRepository extends JpaRepository<Company, UUID> {
 
     org.springframework.data.domain.Page<Company> findByUserId(UUID userId, org.springframework.data.domain.Pageable pageable);
 
-    @Query("SELECT c FROM Company c WHERE (:userId IS NULL OR c.userId = :userId) AND (:q IS NULL OR LOWER(c.name) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(c.role) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%'))) AND (:from IS NULL OR c.startDate >= :from) AND (:to IS NULL OR c.startDate <= :to)")
+    @Query("SELECT c FROM Company c WHERE (CAST(:userId AS uuid) IS NULL OR c.userId = :userId) AND (CAST(:q AS string) IS NULL OR LOWER(c.name) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(c.role) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%'))) AND (CAST(:from AS date) IS NULL OR c.startDate >= :from) AND (CAST(:to AS date) IS NULL OR c.startDate <= :to)")
     org.springframework.data.domain.Page<Company> searchAdmin(
             @org.springframework.data.repository.query.Param("userId") UUID userId,
             @org.springframework.data.repository.query.Param("q") String q,

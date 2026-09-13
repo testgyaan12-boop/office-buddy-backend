@@ -165,6 +165,7 @@ public class AuthService {
 
         user.setFailedLoginAttempts(0);
         user.setAccountLockedUntil(null);
+        user.setLastLoginAt(LocalDateTime.now());
         userRepository.save(user);
 
         var accessToken = jwtService.generateToken(user);

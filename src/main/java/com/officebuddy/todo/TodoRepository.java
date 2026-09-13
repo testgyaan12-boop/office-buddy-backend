@@ -28,7 +28,7 @@ public interface TodoRepository extends JpaRepository<Todo, UUID> {
 
     org.springframework.data.domain.Page<Todo> findByUserId(UUID userId, org.springframework.data.domain.Pageable pageable);
 
-    @Query("SELECT t FROM Todo t WHERE (:userId IS NULL OR t.userId = :userId) AND (:type IS NULL OR t.type = :type) AND (:q IS NULL OR LOWER(t.title) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')))")
+    @Query("SELECT t FROM Todo t WHERE (CAST(:userId AS uuid) IS NULL OR t.userId = :userId) AND (CAST(:type AS string) IS NULL OR t.type = :type) AND (CAST(:q AS string) IS NULL OR LOWER(t.title) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')))")
     org.springframework.data.domain.Page<Todo> searchAdmin(
             @org.springframework.data.repository.query.Param("userId") UUID userId,
             @org.springframework.data.repository.query.Param("type") String type,

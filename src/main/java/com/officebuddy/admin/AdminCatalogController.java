@@ -24,6 +24,7 @@ import com.officebuddy.reminder.entity.Reminder;
 import com.officebuddy.reminder.repository.ReminderRepository;
 import com.officebuddy.security.SecuritySetting;
 import com.officebuddy.security.SecuritySettingRepository;
+import com.officebuddy.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +33,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
@@ -56,6 +58,7 @@ public class AdminCatalogController {
     private final CustomAdRepository customAdRepository;
     private final SecuritySettingRepository securitySettingRepository;
     private final PaymentConfigRepository paymentConfigRepository;
+    private final UserRepository userRepository;
 
     // ---- documents ----
     @GetMapping("/documents")
@@ -64,11 +67,43 @@ public class AdminCatalogController {
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable) {
         String query = (q == null || q.isBlank()) ? null : q.trim();
+        Page<?> page;
         if (query == null) {
-            if (userId != null) return ResponseEntity.ok(documentRepository.findByUserId(userId, pageable));
-            return ResponseEntity.ok(documentRepository.findAll(pageable));
+            if (userId != null) page = documentRepository.findByUserId(userId, pageable);
+            else page = documentRepository.findAll(pageable);
+        } else {
+            page = documentRepository.searchAdmin(userId, query, pageable);
         }
-        return ResponseEntity.ok(documentRepository.searchAdmin(userId, query, pageable));
+        var content = page.getContent();
+        var enriched = new java.util.ArrayList<Map<String, Object>>();
+        for (var obj : content) {
+            var d = (com.officebuddy.document.Document) obj;
+            var m = new java.util.LinkedHashMap<String, Object>();
+            m.put("id", d.getId().toString());
+            m.put("userId", d.getUserId() != null ? d.getUserId().toString() : null);
+            m.put("title", d.getTitle());
+            m.put("fileName", d.getFileName());
+            m.put("type", d.getType());
+            m.put("fileSize", d.getFileSize());
+            m.put("mimeType", d.getMimeType());
+            m.put("companyId", d.getCompanyId() != null ? d.getCompanyId().toString() : null);
+            m.put("uploadedAt", d.getUploadedAt() != null ? d.getUploadedAt().toString() : null);
+            m.put("isActive", d.getIsActive());
+            if (d.getUserId() != null) {
+                var user = userRepository.findById(d.getUserId()).orElse(null);
+                if (user != null) {
+                    m.put("userName", user.getName());
+                    m.put("userEmail", user.getEmail());
+                }
+            }
+            enriched.add(m);
+        }
+        var out = new java.util.LinkedHashMap<String, Object>();
+        out.put("content", enriched);
+        out.put("totalElements", page.getTotalElements());
+        out.put("totalPages", page.getTotalPages());
+        out.put("number", page.getNumber());
+        return ResponseEntity.ok(out);
     }
 
     @GetMapping("/documents/{id}")
@@ -101,11 +136,41 @@ public class AdminCatalogController {
         java.time.LocalDate f = parseDate(from);
         java.time.LocalDate t = parseDate(to);
         String query = (q == null || q.isBlank()) ? null : q.trim();
+        Page<?> page;
         if (query == null && f == null && t == null) {
-            if (userId != null) return ResponseEntity.ok(companyRepository.findByUserId(userId, pageable));
-            return ResponseEntity.ok(companyRepository.findAll(pageable));
+            if (userId != null) page = companyRepository.findByUserId(userId, pageable);
+            else page = companyRepository.findAll(pageable);
+        } else {
+            page = companyRepository.searchAdmin(userId, query, f, t, pageable);
         }
-        return ResponseEntity.ok(companyRepository.searchAdmin(userId, query, f, t, pageable));
+        var content = page.getContent();
+        var enriched = new java.util.ArrayList<Map<String, Object>>();
+        for (var obj : content) {
+            var c = (com.officebuddy.company.Company) obj;
+            var m = new java.util.LinkedHashMap<String, Object>();
+            m.put("id", c.getId().toString());
+            m.put("userId", c.getUserId() != null ? c.getUserId().toString() : null);
+            m.put("name", c.getName());
+            m.put("role", c.getRole());
+            m.put("startDate", c.getStartDate() != null ? c.getStartDate().toString() : null);
+            m.put("endDate", c.getEndDate() != null ? c.getEndDate().toString() : null);
+            m.put("isCurrent", c.isCurrent());
+            m.put("isActive", c.getIsActive());
+            if (c.getUserId() != null) {
+                var user = userRepository.findById(c.getUserId()).orElse(null);
+                if (user != null) {
+                    m.put("userName", user.getName());
+                    m.put("userEmail", user.getEmail());
+                }
+            }
+            enriched.add(m);
+        }
+        var out = new java.util.LinkedHashMap<String, Object>();
+        out.put("content", enriched);
+        out.put("totalElements", page.getTotalElements());
+        out.put("totalPages", page.getTotalPages());
+        out.put("number", page.getNumber());
+        return ResponseEntity.ok(out);
     }
 
     private java.time.LocalDate parseDate(String s) {
@@ -143,16 +208,75 @@ public class AdminCatalogController {
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable) {
         String query = (q == null || q.isBlank()) ? null : q.trim();
+        Page<?> page;
         if (query == null) {
-            if (userId != null) return ResponseEntity.ok(subscriptionRepository.findByUserId(userId, pageable));
-            return ResponseEntity.ok(subscriptionRepository.findAll(pageable));
+            if (userId != null) page = subscriptionRepository.findByUserId(userId, pageable);
+            else page = subscriptionRepository.findAll(pageable);
+        } else {
+            page = subscriptionRepository.searchAdmin(userId, query, pageable);
         }
-        return ResponseEntity.ok(subscriptionRepository.searchAdmin(userId, query, pageable));
+        var content = page.getContent();
+        var enriched = new java.util.ArrayList<Map<String, Object>>();
+        for (var obj : content) {
+            var s = (Subscription) obj;
+            var m = new java.util.LinkedHashMap<String, Object>();
+            m.put("id", s.getId().toString());
+            m.put("userId", s.getUserId() != null ? s.getUserId().toString() : null);
+            m.put("planCode", s.getPlanCode());
+            m.put("planName", s.getPlanName());
+            m.put("storageLimitBytes", s.getStorageLimitBytes());
+            m.put("maxCompanies", s.getMaxCompanies());
+            m.put("maxDocuments", s.getMaxDocuments());
+            m.put("adsEnabled", s.getAdsEnabled());
+            m.put("status", s.getStatus());
+            m.put("startDate", s.getStartDate() != null ? s.getStartDate().toString() : null);
+            m.put("expiryDate", s.getExpiryDate() != null ? s.getExpiryDate().toString() : null);
+            m.put("isActive", s.getIsActive());
+            if (s.getUserId() != null) {
+                var user = userRepository.findById(s.getUserId()).orElse(null);
+                if (user != null) {
+                    m.put("userName", user.getName());
+                    m.put("userEmail", user.getEmail());
+                }
+            }
+            enriched.add(m);
+        }
+        var out = new java.util.LinkedHashMap<String, Object>();
+        out.put("content", enriched);
+        out.put("totalElements", page.getTotalElements());
+        out.put("totalPages", page.getTotalPages());
+        out.put("number", page.getNumber());
+        return ResponseEntity.ok(out);
     }
 
     @GetMapping("/subscriptions/{id}")
     public ResponseEntity<Subscription> subscription(@PathVariable UUID id) {
         return ResponseEntity.ok(subscriptionRepository.findById(id).orElseThrow(() -> new RuntimeException("Not found")));
+    }
+
+    @PutMapping("/subscriptions/{id}")
+    public ResponseEntity<?> updateSubscription(@PathVariable UUID id, @RequestBody Map<String, Object> body) {
+        var sub = subscriptionRepository.findById(id).orElseThrow(() -> new RuntimeException("Not found"));
+        if (body.containsKey("status")) sub.setStatus(String.valueOf(body.get("status")));
+        if (body.containsKey("planCode")) sub.setPlanCode(String.valueOf(body.get("planCode")));
+        if (body.containsKey("planName")) sub.setPlanName(String.valueOf(body.get("planName")));
+        if (body.containsKey("storageLimitBytes")) sub.setStorageLimitBytes(Long.valueOf(String.valueOf(body.get("storageLimitBytes"))));
+        if (body.containsKey("maxCompanies")) sub.setMaxCompanies(Integer.valueOf(String.valueOf(body.get("maxCompanies"))));
+        if (body.containsKey("maxDocuments")) sub.setMaxDocuments(Integer.valueOf(String.valueOf(body.get("maxDocuments"))));
+        if (body.containsKey("adsEnabled")) sub.setAdsEnabled(Boolean.valueOf(String.valueOf(body.get("adsEnabled"))));
+        if (body.containsKey("isActive")) sub.setIsActive(Integer.valueOf(String.valueOf(body.get("isActive"))));
+        if (body.containsKey("expiryDate")) {
+            String v = String.valueOf(body.get("expiryDate"));
+            if (v != null && !v.isBlank() && !"null".equals(v)) sub.setExpiryDate(LocalDateTime.parse(v));
+        }
+        subscriptionRepository.save(sub);
+        return ResponseEntity.ok(sub);
+    }
+
+    @DeleteMapping("/subscriptions/{id}")
+    public ResponseEntity<?> deleteSubscription(@PathVariable UUID id) {
+        subscriptionRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("message", "Deleted"));
     }
 
     // ---- invoices ----
@@ -162,11 +286,62 @@ public class AdminCatalogController {
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable) {
         String query = (q == null || q.isBlank()) ? null : q.trim();
+        Page<?> page;
         if (query == null) {
-            if (userId != null) return ResponseEntity.ok(invoiceRepository.findByUserId(userId, pageable));
-            return ResponseEntity.ok(invoiceRepository.findAll(pageable));
+            if (userId != null) page = invoiceRepository.findByUserId(userId, pageable);
+            else page = invoiceRepository.findAll(pageable);
+        } else {
+            page = invoiceRepository.searchAdmin(userId, query, pageable);
         }
-        return ResponseEntity.ok(invoiceRepository.searchAdmin(userId, query, pageable));
+        var content = page.getContent();
+        var enriched = new java.util.ArrayList<Map<String, Object>>();
+        for (var obj : content) {
+            var inv = (com.officebuddy.adAndSubscription.invoice.Invoice) obj;
+            var m = new java.util.LinkedHashMap<String, Object>();
+            m.put("id", inv.getId().toString());
+            m.put("userId", inv.getUserId() != null ? inv.getUserId().toString() : null);
+            m.put("invoiceNo", inv.getInvoiceNo());
+            m.put("planCode", inv.getPlanCode());
+            m.put("planName", inv.getPlanName());
+            m.put("amount", inv.getAmount());
+            m.put("currency", inv.getCurrency());
+            m.put("status", inv.getStatus());
+            m.put("issuedAt", inv.getIssuedAt() != null ? inv.getIssuedAt().toString() : null);
+            m.put("isActive", inv.getIsActive());
+            if (inv.getUserId() != null) {
+                var user = userRepository.findById(inv.getUserId()).orElse(null);
+                if (user != null) {
+                    m.put("userName", user.getName());
+                    m.put("userEmail", user.getEmail());
+                }
+            }
+            enriched.add(m);
+        }
+        var out = new java.util.LinkedHashMap<String, Object>();
+        out.put("content", enriched);
+        out.put("totalElements", page.getTotalElements());
+        out.put("totalPages", page.getTotalPages());
+        out.put("number", page.getNumber());
+        return ResponseEntity.ok(out);
+    }
+
+    @PutMapping("/invoices/{id}")
+    public ResponseEntity<?> updateInvoice(@PathVariable UUID id, @RequestBody Map<String, Object> body) {
+        var inv = invoiceRepository.findById(id).orElseThrow(() -> new RuntimeException("Not found"));
+        if (body.containsKey("status")) inv.setStatus(String.valueOf(body.get("status")));
+        if (body.containsKey("planName")) inv.setPlanName(String.valueOf(body.get("planName")));
+        if (body.containsKey("planCode")) inv.setPlanCode(String.valueOf(body.get("planCode")));
+        if (body.containsKey("amount")) inv.setAmount(Long.valueOf(String.valueOf(body.get("amount"))));
+        if (body.containsKey("currency")) inv.setCurrency(String.valueOf(body.get("currency")));
+        if (body.containsKey("isActive")) inv.setIsActive(Integer.valueOf(String.valueOf(body.get("isActive"))));
+        invoiceRepository.save(inv);
+        return ResponseEntity.ok(inv);
+    }
+
+    @DeleteMapping("/invoices/{id}")
+    public ResponseEntity<?> deleteInvoice(@PathVariable UUID id) {
+        invoiceRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("message", "Deleted"));
     }
 
     // ---- plans ----
@@ -236,11 +411,37 @@ public class AdminCatalogController {
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable) {
         String query = (q == null || q.isBlank()) ? null : q.trim();
+        Page<?> page;
         if (query == null) {
-            if (userId != null) return ResponseEntity.ok(goalRepository.findByUserId(userId, pageable));
-            return ResponseEntity.ok(goalRepository.findAll(pageable));
+            if (userId != null) page = goalRepository.findByUserId(userId, pageable);
+            else page = goalRepository.findAll(pageable);
+        } else {
+            page = goalRepository.searchAdmin(userId, query, pageable);
         }
-        return ResponseEntity.ok(goalRepository.searchAdmin(userId, query, pageable));
+        var enriched = new java.util.ArrayList<Map<String, Object>>();
+        for (var obj : page.getContent()) {
+            var g = (com.officebuddy.goal.Goal) obj;
+            var m = new java.util.LinkedHashMap<String, Object>();
+            m.put("id", g.getId().toString());
+            m.put("userId", g.getUserId() != null ? g.getUserId().toString() : null);
+            m.put("title", g.getTitle());
+            m.put("description", g.getDescription());
+            m.put("category", g.getCategory());
+            m.put("targetDate", g.getTargetDate() != null ? g.getTargetDate().toString() : null);
+            m.put("status", g.getStatus());
+            m.put("isActive", g.getIsActive());
+            if (g.getUserId() != null) {
+                var user = userRepository.findById(g.getUserId()).orElse(null);
+                if (user != null) { m.put("userName", user.getName()); m.put("userEmail", user.getEmail()); }
+            }
+            enriched.add(m);
+        }
+        var out = new java.util.LinkedHashMap<String, Object>();
+        out.put("content", enriched);
+        out.put("totalElements", page.getTotalElements());
+        out.put("totalPages", page.getTotalPages());
+        out.put("number", page.getNumber());
+        return ResponseEntity.ok(out);
     }
 
     @PutMapping("/goals/{id}")
@@ -266,11 +467,37 @@ public class AdminCatalogController {
             @PageableDefault(size = 20) Pageable pageable) {
         String query = (q == null || q.isBlank()) ? null : q.trim();
         String t = (type == null || type.isBlank()) ? null : type.trim().toLowerCase();
+        Page<?> page;
         if (query == null && t == null) {
-            if (userId != null) return ResponseEntity.ok(todoRepository.findByUserId(userId, pageable));
-            return ResponseEntity.ok(todoRepository.findAll(pageable));
+            if (userId != null) page = todoRepository.findByUserId(userId, pageable);
+            else page = todoRepository.findAll(pageable);
+        } else {
+            page = todoRepository.searchAdmin(userId, t, query, pageable);
         }
-        return ResponseEntity.ok(todoRepository.searchAdmin(userId, t, query, pageable));
+        var enriched = new java.util.ArrayList<Map<String, Object>>();
+        for (var obj : page.getContent()) {
+            var td = (com.officebuddy.todo.Todo) obj;
+            var m = new java.util.LinkedHashMap<String, Object>();
+            m.put("id", td.getId().toString());
+            m.put("userId", td.getUserId() != null ? td.getUserId().toString() : null);
+            m.put("title", td.getTitle());
+            m.put("content", td.getContent());
+            m.put("type", td.getType());
+            m.put("dueDate", td.getDueDate() != null ? td.getDueDate().toString() : null);
+            m.put("completed", td.isCompleted());
+            m.put("isActive", td.getIsActive());
+            if (td.getUserId() != null) {
+                var user = userRepository.findById(td.getUserId()).orElse(null);
+                if (user != null) { m.put("userName", user.getName()); m.put("userEmail", user.getEmail()); }
+            }
+            enriched.add(m);
+        }
+        var out = new java.util.LinkedHashMap<String, Object>();
+        out.put("content", enriched);
+        out.put("totalElements", page.getTotalElements());
+        out.put("totalPages", page.getTotalPages());
+        out.put("number", page.getNumber());
+        return ResponseEntity.ok(out);
     }
 
     @PutMapping("/todos/{id}")
@@ -290,7 +517,34 @@ public class AdminCatalogController {
     // ---- pack downloads ----
     @GetMapping("/pack-downloads")
     public ResponseEntity<?> packDownloads(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(packDownloadDetailsRepository.findAll(pageable));
+        var page = packDownloadDetailsRepository.findAll(pageable);
+        var enriched = new java.util.ArrayList<Map<String, Object>>();
+        for (var d : page.getContent()) {
+            var m = new java.util.LinkedHashMap<String, Object>();
+            m.put("id", d.getId().toString());
+            m.put("userId", d.getUserId() != null ? d.getUserId().toString() : null);
+            m.put("packId", d.getPackId() != null ? d.getPackId().toString() : null);
+            m.put("downloadCount", d.getDownloadCount());
+            m.put("active", d.getActive());
+            m.put("downloadedAt", d.getDownloadedAt() != null ? d.getDownloadedAt().toString() : null);
+            m.put("ipAddress", d.getIpAddress());
+            m.put("selectedTypesSnapshot", d.getSelectedTypesSnapshot());
+            m.put("createdAt", d.getCreatedAt() != null ? d.getCreatedAt().toString() : null);
+            if (d.getUserId() != null) {
+                var user = userRepository.findById(d.getUserId()).orElse(null);
+                if (user != null) {
+                    m.put("userName", user.getName());
+                    m.put("userEmail", user.getEmail());
+                }
+            }
+            enriched.add(m);
+        }
+        var out = new java.util.LinkedHashMap<String, Object>();
+        out.put("content", enriched);
+        out.put("totalElements", page.getTotalElements());
+        out.put("totalPages", page.getTotalPages());
+        out.put("number", page.getNumber());
+        return ResponseEntity.ok(out);
     }
 
     @DeleteMapping("/pack-downloads/{id}")
@@ -302,8 +556,31 @@ public class AdminCatalogController {
     // ---- reminders ----
     @GetMapping("/reminders")
     public ResponseEntity<?> reminders(@RequestParam(required = false) UUID userId, @PageableDefault(size = 20) Pageable pageable) {
-        if (userId != null) return ResponseEntity.ok(reminderRepository.findByUserId(userId, pageable));
-        return ResponseEntity.ok(reminderRepository.findAll(pageable));
+        var page = (userId != null) ? reminderRepository.findByUserId(userId, pageable) : reminderRepository.findAll(pageable);
+        var enriched = new java.util.ArrayList<Map<String, Object>>();
+        for (var r : page.getContent()) {
+            var m = new java.util.LinkedHashMap<String, Object>();
+            m.put("id", r.getId().toString());
+            m.put("userId", r.getUserId() != null ? r.getUserId().toString() : null);
+            m.put("title", r.getTitle());
+            m.put("description", r.getDescription());
+            m.put("type", r.getType());
+            m.put("category", r.getCategory());
+            m.put("remindAt", r.getRemindAt() != null ? r.getRemindAt().toString() : null);
+            m.put("companyId", r.getCompanyId() != null ? r.getCompanyId().toString() : null);
+            m.put("isActive", r.getIsActive());
+            if (r.getUserId() != null) {
+                var user = userRepository.findById(r.getUserId()).orElse(null);
+                if (user != null) { m.put("userName", user.getName()); m.put("userEmail", user.getEmail()); }
+            }
+            enriched.add(m);
+        }
+        var out = new java.util.LinkedHashMap<String, Object>();
+        out.put("content", enriched);
+        out.put("totalElements", page.getTotalElements());
+        out.put("totalPages", page.getTotalPages());
+        out.put("number", page.getNumber());
+        return ResponseEntity.ok(out);
     }
 
     @PutMapping("/reminders/{id}")

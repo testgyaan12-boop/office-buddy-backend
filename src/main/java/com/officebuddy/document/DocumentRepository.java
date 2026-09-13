@@ -29,7 +29,7 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
 
     org.springframework.data.domain.Page<Document> findByUserId(UUID userId, org.springframework.data.domain.Pageable pageable);
 
-    @Query("SELECT d FROM Document d WHERE (:userId IS NULL OR d.userId = :userId) AND (:q IS NULL OR LOWER(d.title) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(d.fileName) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(d.type) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')))")
+    @Query("SELECT d FROM Document d WHERE (CAST(:userId AS uuid) IS NULL OR d.userId = :userId) AND (CAST(:q AS string) IS NULL OR LOWER(d.title) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(d.fileName) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')) OR LOWER(d.type) LIKE LOWER(CONCAT('%', CAST(:q AS string), '%')))")
     org.springframework.data.domain.Page<Document> searchAdmin(
             @org.springframework.data.repository.query.Param("userId") UUID userId,
             @org.springframework.data.repository.query.Param("q") String q,

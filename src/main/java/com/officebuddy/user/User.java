@@ -85,6 +85,9 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "account_locked_until")
     private LocalDateTime accountLockedUntil;
 
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         String role = accessRole != null ? accessRole.toUpperCase() : "MEMBER";
