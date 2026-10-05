@@ -128,6 +128,7 @@ public class CommunityService {
         var friendIds = getFriendIds(currentUserId);
         return userRepository.findAll().stream()
                 .filter(u -> !u.getId().equals(currentUserId))
+                .filter(u -> !"ADMIN".equals(u.getAccessRole()))
                 .map(u -> {
                     String status = null;
                     if (friendIds.contains(u.getId())) {

@@ -175,4 +175,15 @@ public class GroupController {
         m.put("senderName", user.map(u -> u.getName()).orElse("Unknown"));
         return ResponseEntity.ok(m);
     }
+
+    @DeleteMapping("/{groupId}/leave")
+    public ResponseEntity<?> leaveGroup(@PathVariable UUID groupId, Authentication auth) {
+        UUID uid = userId(auth);
+        var opt = groupMemberRepository.findByGroupIdAndUserId(groupId, uid);
+        if (opt.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Not a member"));
+        }
+        groupMemberRepository.delete(opt.get());
+        return ResponseEntity.ok(Map.of("message", "Left group"));
+    }
 }
